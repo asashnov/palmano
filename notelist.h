@@ -1,5 +1,5 @@
-#ifndef NOTE_LIST_H
-#define NOTE_LIST_H 1
+#ifndef NOTES_H
+#define NOTES_H 1
 
 typedef struct
 {
@@ -10,7 +10,7 @@ typedef struct
 } NoteType;
 
 MemHandle
-notelist_AppendNoteToList (MemHandle listH, UInt16 *numnotes, const NoteType *n);
+notes_AppendNoteToList (MemHandle listH, UInt16 *numnotes, const NoteType *n);
 
 /* TODO: insert note, delete note */
 

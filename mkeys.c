@@ -1,5 +1,6 @@
 #include <PalmOS.h>
-#include "midi_keyboard.h"
+#include "midi_keys.h"
+#include "notes.h"
 
 #if 0
 
@@ -295,9 +296,12 @@ midi_keyboard_init ()
 }
 
 
+/* midi_keyboard gadget callback function.
+   NOTE: it calls by programm, not by system
+   becose it facility from PalmOS 3.5 but custom alarm sound from PalmOS3.0
+ */
 
 
-/* midi_keyboard gadget callback function */
 extern void
 midikeyb_gadget_cb (struct FormGadgetType *gadgetP, UInt16 cmd, void *paramP)
 {

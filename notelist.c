@@ -1,8 +1,10 @@
-#include "notelist.h"
+#include "notes.h"
+
+/* Dynamic array of notes functions */
 
 /* AppendNoteToList */
 MemHandle
-notelist_AppendNoteToList (MemHandle listH, UInt16 *numnotes, const NoteType *n)
+notes_AppendNoteToList (MemHandle listH, UInt16 *numnotes, const NoteType *n)
 {
   NoteType *newnote;
   UInt8 *p;

@@ -1,7 +1,7 @@
 #ifndef EDITORFORM_H
 #define EDITORFORM_H
 
-#include "midi_keyboard.h"
+#include "midi_keys.h"
 #include "midi_util.h"
 #include "util.h"
 

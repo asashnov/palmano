@@ -3,40 +3,9 @@
 #include "main_form.h"
 #include "editor_form.h"
 
-static MemHandle MidiListH = NULL;	/* handle to list */
-static UInt16 NumMidi;		/* number of sond in list */
-static Int16 list_Selected = -1;	/* -1 nothing selected */
-
-
-/* --- From PalmOS 3.5 SDK documentation
-
- SndMidiListItemType
-
-When the SndCreateMidiList function returns true, its entHP parameter holds a
-handle to a memory chunk containing an array of SndMidiListItemType structures.
-
-typedef struct SndMidiListItemType{
-
-Char name[sndMidiNameLength];
-UInt32 uniqueRecID;
-LocalID dbID;
-UInt16 cardNo;
-} SndMidiListItemType;
-
-Field Descriptions
-
-name MIDI name including NULL terminator.
-uniqueRecID Unique ID of the record containing the MIDI file.
-dbID Database (file) ID.
-cardNo Number of the memory card on which the MIDI file resides.
-
-
-*/
-
-
-//  ErrDisplay("main form: All OK!!!!");
-
-
+static MemHandle MidiListH = NULL;
+static UInt16 NumMidi;
+static Int16 list_Selected = -1;
 
 /* draw one midi name in the list */
 static void
@@ -59,12 +28,13 @@ cb_midi_list_draw_item (Int16 itemNum,
 }
 
 
-/* new midi */
-static void
+
+/*   Main form actions   */
+
+static void 
 New ()
 {
-  // open editor for new MIDI
-  MemMove (&EditorMidi.name[0], "Untitled", sndMidiNameLength);
+  MemMove (EditorMidi.name, "Untitled", sndMidiNameLength);
   EditorMidi.cardNo = 0;
   EditorMidi.dbID = 0;
   EditorMidi.uniqueRecID = 0;
@@ -72,9 +42,7 @@ New ()
   FrmGotoForm (ID_EditorForm);
 }
 
-
-/* play midi */
-static void
+static void 
 Play ()
 {
   SndMidiListItemType *p;
@@ -97,8 +65,7 @@ Play ()
 }
 
 
-/* open (edit) midi */
-static void
+static void 
 Edit ()
 {
   SndMidiListItemType *p;
@@ -114,7 +81,6 @@ Edit ()
   if (p == NULL)
     ErrFatalDisplay ("Can't lock MidiListH");
 
-  /* copy current selected song info in editor */
   MemMove (&EditorMidi.name[0], &p[list_Selected].name[0], sndMidiNameLength);
   EditorMidi.cardNo = p[list_Selected].cardNo;
   EditorMidi.dbID = p[list_Selected].dbID;
@@ -126,8 +92,7 @@ Edit ()
 }
 
 
-/* copy action */
-static void
+static void 
 Copy ()
 {
   if (list_Selected < 0)
@@ -140,8 +105,7 @@ Copy ()
 }
 
 
-/* delete action */
-static void
+static void 
 Delete ()
 {
   if (list_Selected < 0)
@@ -154,8 +118,7 @@ Delete ()
 }
 
 
-/* info action */
-static void
+static void 
 Info ()
 {
   if (list_Selected < 0)
@@ -168,7 +131,6 @@ Info ()
 }
 
 
-/* beam action */
 static void
 Beam ()
 {
@@ -182,12 +144,12 @@ Beam ()
 }
 
 
+
 void
 MainFormOpen (void)
 {
   ListPtr list;
 
-  /* free old list */
   if (MidiListH != NULL)
     {
       MemHandleFree (MidiListH);
@@ -197,35 +159,35 @@ MainFormOpen (void)
   /* get list of system midi */
   SndCreateMidiList (0, true, &NumMidi, &MidiListH);
 
-  /* setup list callback function and data pointer */
   list = GetObjectFromActiveForm (ID_MainSongList);
   LstSetDrawFunction (list, cb_midi_list_draw_item);
   LstSetListChoices (list, NULL, NumMidi);
+
+  ActionListSelected = 0;
+  FrmDrawForm (form);	/* Draw all objects in a form and the frame around the form */
 }
 
 
 void
 MainFormClose (void)
 {
-  /* system midi list handle */
-  if (MidiListH != NULL)
+  if (MidiListH != NULL) {
     MemHandleFree (MidiListH);
+    MidiListH = NULL;
+  }
 }
 
-/* Main form event handler */
+
 Boolean
 MainFormEventHandler (EventType * e)
 {
   FormType *form = FrmGetActiveForm ();
-  /* Action drop-down list */
-  static UInt16 ActionListSelected = 0;	/* Open action selected default */
+  static UInt16 ActionListSelected = 0; /* Open action selected by default */
 
   switch (e->eType)
     {
     case frmOpenEvent:
-      ActionListSelected = 0;
       MainFormOpen ();
-      FrmDrawForm (form);
       return true;
 
     case frmCloseEvent:
@@ -235,13 +197,10 @@ MainFormEventHandler (EventType * e)
     case lstSelectEvent:
       switch (e->data.ctlSelect.controlID)
 	{
-	  /* select song in midi list */
-	case ID_MainSongList:
+	case ID_MainSongList:	/* select song in midi list */
 	  {
 	    list_Selected = e->data.lstSelect.selection;
-
-	    /* action whis selected midi */
-	    switch (ActionListSelected)
+	    switch (ActionListSelected)	/* action whis selected midi */
 	      {
 	      case 0:		/* open action */
 		Edit ();
@@ -276,9 +235,8 @@ MainFormEventHandler (EventType * e)
 	}
       break;
 
-      /* remember number of selected action in action list */
     case popSelectEvent:
-      ActionListSelected = e->data.popSelect.selection;
+      ActionListSelected = e->data.popSelect.selection;	/* remember number of selected action in action list */
       return false;
 
 //    case keyDownEvent:
@@ -293,5 +251,5 @@ MainFormEventHandler (EventType * e)
       break;
     }
 
-  return false;
+  return false;			/* FrmDispatchEvent now must call FrmHandleEvent*/
 }

@@ -20,7 +20,7 @@ static UInt32 rom_version;
 void
 StopApplication (void)
 {
-  FrmCloseAllForms ();
+  FrmCloseAllForms ();		/* Send a frmCloseEvent to all open forms. */
 }
 
 
@@ -38,13 +38,13 @@ ApplicationHandleEvent (EventType * event)
 
   if (event->eType == frmLoadEvent)
     {
-      // Load the form resource.
+      /* Load the form resource. */
       formId = event->data.frmLoad.formID;
-      frm = FrmInitForm (formId);
-      FrmSetActiveForm (frm);
-      // Set the event handler for the form.  The handler of the currently
-      // active form is called by FrmHandleEvent each time is receives an
-      // event.
+      frm = FrmInitForm (formId); /* Load and initialize a form resource. */
+      FrmSetActiveForm (frm);	/* Set the active form. All input (key and pen) is directed 
+				   to the active form and all drawing occurs there */
+
+      /* Registers the event handler callback routine for the specified form. */
       switch (formId)
 	{
 	case ID_MainForm:
@@ -90,7 +90,7 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
 
 	      if (!MenuHandleEvent (0, &event, &error))
 
-		if (!ApplicationHandleEvent (&event))
+		if (!ApplicationHandleEvent (&event)) /* only FrmLoadEvent */
 
 		  FrmDispatchEvent (&event);
 

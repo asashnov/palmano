@@ -1,7 +1,7 @@
 #include <PalmOS.h>
 #include "resource.h"
 #include "editor_form.h"
-#include "notelist.h"
+#include "notes.h"
 
 /* Current song */
 SndMidiListItemType EditorMidi;   
@@ -48,55 +48,6 @@ PlayNote (const NoteType *n)
 /*****************************************
           Editor Form
 *****************************************/
-
-void
-EditorFormOpen (void)
-{
-  ListType *list;
-  FormGadgetType *mkGadget;
-  FormType *form = FrmGetActiveForm ();
-  mkGadget = GetObjectFromActiveForm (ID_EditorMidiGadget);
-
-  // set the name field
-  SetFieldTextFromStr (ID_EditorNameField, &EditorMidi.name[0]);
-
-  // Alloc note buffer
-  if (EditorNoteBufH != NULL)
-    MemHandleFree (EditorNoteBufH);
-  EditorNoteBufH = MemHandleNew (sizeof (NoteType));
-
-  // init editor variables
-  EditorNumNotes = 0;
-  EditorNoteListFirst = 0;
-
-  // setup note list
-  list = GetObjectFromActiveForm (ID_EditorNoteList);
-  LstSetDrawFunction (list, DrawOneNoteInList);
-  LstSetListChoices (list, NULL, 0);
-
-  // load MIDI in note editor if it not new MIDI
-  if (EditorMidi.dbID != 0)
-    {
-// TODO: call midi_load_notes () function from midi_util
-    }
-
-  midi_keyboard_init ();
-
-  FrmDrawForm (form);
-
-  /* Draw midi keyboard */
-  midikeyb_gadget_cb (mkGadget, formGadgetDrawCmd, NULL);
-}
-
-
-void
-EditorFormClose (void)
-{
-  // current edited midi handle
-  if (EditorNoteBufH != NULL)
-    MemHandleFree (EditorNoteBufH);
-}
-
 
 static void
 EditorDropButtonClick (void)
@@ -245,6 +196,56 @@ void
   DrawCharsToFitWidth (buf, bounds);
 
   MemPtrUnlock (p);
+}
+
+
+static void
+EditorFormOpen (void)
+{
+  ListType *list;
+  FormGadgetType *mkGadget;
+  FormType *form = FrmGetActiveForm ();
+  mkGadget = GetObjectFromActiveForm (ID_EditorMidiGadget);
+
+  // set the name field
+  SetFieldTextFromStr (ID_EditorNameField, &EditorMidi.name[0]);
+
+  // Alloc note buffer
+  if (EditorNoteBufH != NULL)
+    MemHandleFree (EditorNoteBufH);
+  EditorNoteBufH = MemHandleNew (sizeof (NoteType));
+
+  // init editor variables
+  EditorNumNotes = 0;
+  EditorNoteListFirst = 0;
+
+  // setup note list
+  list = GetObjectFromActiveForm (ID_EditorNoteList);
+  LstSetDrawFunction (list, DrawOneNoteInList);
+  LstSetListChoices (list, NULL, 0);
+
+  // load MIDI in note editor if it not new MIDI
+  if (EditorMidi.dbID != 0)
+    {
+// TODO: call midi_load_notes () function from midi_util
+    }
+
+  midi_keyboard_init ();
+
+  FrmDrawForm (form);
+
+  /* Draw midi keyboard */
+  midikeyb_gadget_cb (mkGadget, formGadgetDrawCmd, NULL);
+}
+
+
+static void
+EditorFormClose (void)
+{
+  if (EditorNoteBufH != NULL) {
+    MemHandleFree (EditorNoteBufH);
+    EditorNoteBufH = NULL;
+  }
 }
 
 
