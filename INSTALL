@@ -1,0 +1,12 @@
+  Palmano installation instruction.
+
+Install 'palmano.prc' in your Pilot device.
+
+You can use 'pilot-link' package for this:
+
+  pilot-xfer -i palmano.prc
+
+and press 'Sync' button.
+
+Also you can use any other software for palm sync
+(windows Palm desctop for example).

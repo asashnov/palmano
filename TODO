@@ -1,0 +1,8 @@
+* MidiKeyboard: разделить интерфейс проверки и подсветки клавиш:
+  проверку сделать в gadget_callback функции, а подсветку отдельным
+интерфейсом.
+
+* Confirm open big file: Your selected file is big. It may opening
+  long time and exceed free memory in your handeled device. Try to
+open this file anyway? [Yes] / [No]
+
