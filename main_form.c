@@ -149,6 +149,7 @@ void
 MainFormOpen (void)
 {
   ListPtr list;
+  FormType *form = FrmGetActiveForm ();
 
   if (MidiListH != NULL)
     {
@@ -163,7 +164,6 @@ MainFormOpen (void)
   LstSetDrawFunction (list, cb_midi_list_draw_item);
   LstSetListChoices (list, NULL, NumMidi);
 
-  ActionListSelected = 0;
   FrmDrawForm (form);	/* Draw all objects in a form and the frame around the form */
 }
 
@@ -181,7 +181,7 @@ MainFormClose (void)
 Boolean
 MainFormEventHandler (EventType * e)
 {
-  FormType *form = FrmGetActiveForm ();
+  //  FormType *form = FrmGetActiveForm ();
   static UInt16 ActionListSelected = 0; /* Open action selected by default */
 
   switch (e->eType)
@@ -192,7 +192,7 @@ MainFormEventHandler (EventType * e)
 
     case frmCloseEvent:
       MainFormClose ();
-      return true;
+      return false;
 
     case lstSelectEvent:
       switch (e->data.ctlSelect.controlID)

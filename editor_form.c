@@ -161,7 +161,7 @@ void EditorNoteButtonPressed (int note_pressed)
   EditorAddNoteToBuffer (&note);
   EditorRefreshNoteList ();
 
-  midiutil_PlayNote (&note);
+  PlayNote (&note);
 }
 
 /* draw note in list callback function */
@@ -266,7 +266,7 @@ FormType *form = FrmGetActiveForm ();  */
 
     case frmCloseEvent:
       EditorFormClose ();
-      return true;
+      return false;		/* return unhandled status for call default system handler (witch free form data). Accordin with standard sdk examples */
 
     case ctlSelectEvent:
 

@@ -10,6 +10,9 @@ FormGadgetType *bounds
   | --------------------------------------------|<--||keyboard |
   |||||||--------------------------------------------|
 #endif
+
+
+
 #define Y_OFFSET               10
 #define WHITE_WIDTH     13
 #define BLACK_HEIGHT    14
@@ -258,14 +261,16 @@ handle_tap (FormGadgetType * gadgetP)
       note.vel   = 0;
       note.pause = 0;
 
+#if 0
 No Play!!!
 generate event to active form instead with 
 note number pressed (or unpressed)
 
   //      midiutil_PlayNote (&note);
 
+#endif
       /* re-draw midi keyboard */
-      draw_midi_keyboard (gadgetP, -1);  -1 ?!!! replace this magic number!!!
+  draw_midi_keyboard (gadgetP, -1); // -1 ?!!! replace this magic number!!!
     }
 }
 
@@ -275,7 +280,7 @@ static void
 draw_all (struct FormGadgetType *gadgetP)
 {
   draw_controls (gadgetP);
-  draw_midi_keyboard (gadgetP, -1); need to replace magic number
+  draw_midi_keyboard (gadgetP, -1); //need to replace magic number
 }
 
 
@@ -292,7 +297,7 @@ draw_all (struct FormGadgetType *gadgetP)
 extern void
 midi_keyboard_init ()
 {
-  set_first_button (60 - 3);  magic numbers again :-(((
+  set_first_button (60 - 3); // magic numbers again :-(((
 }
 
 

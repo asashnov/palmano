@@ -19,7 +19,7 @@ bin.stamp: palmano.rcp resource.h
 	touch bin.stamp
 
 palmano: palmano.o midi_keys.o main_form.o editor_form.o option_form.o midi_util.o util.o smf_util.o notes.o
-palmano.o: palmano.c resource.h midi_keyboard.h
+palmano.o: palmano.c resource.h midi_keys.h
 midi_keys.o: midi_keys.c midi_keys.h
 midi_util.o: midi_util.c midi_util.h
 util.o: util.c util.h

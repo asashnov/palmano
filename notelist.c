@@ -1,3 +1,4 @@
+#include <PalmOS.h>
 #include "notes.h"
 
 /* Dynamic array of notes functions */

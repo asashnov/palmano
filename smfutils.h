@@ -13,6 +13,7 @@
 #define _MAKESMF_H
 
 #include "midi_util.h"
+#include "notes.h"
 
 extern MemHandle smf_StartSMF();
 extern MemHandle smf_AppendNote(MemHandle bufH, int note, int dur, int vel, int pause);
