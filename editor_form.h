@@ -1,9 +1,8 @@
 #ifndef EDITORFORM_H
 #define EDITORFORM_H
 
-#include "midi_keys.h"
-#include "midi_util.h"
-#include "util.h"
+extern Boolean EditorFormEventHandler (EventType * e);
+
 
 /* Currently database edit 
    It can be real or temporary database.
@@ -21,9 +20,5 @@
 
 /* MIDI file currently edited */
 extern SndMidiListItemType EditorMidi;
-
-/* Editor Form event handler */
-extern Boolean
-EditorFormEventHandler (EventType * e);
 
 #endif

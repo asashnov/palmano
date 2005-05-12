@@ -11,7 +11,7 @@ BEGIN
   LIST "" ID ID_MainSongList AT (0 18 160 122) USABLE
 
   POPUPTRIGGER "Open" ID ID_MainPopupTrigger AT (2 146 60 AUTO) USABLE LEFTANCHOR
-  LIST "Open" "Play" "Copy" "Delete" "Info" "Beam" ID ID_MainActionList AT (PrevLeft PrevTop 52 1) NONUSABLE VISIBLEITEMS 6
+  LIST "Edit" "Play" "Copy" "Delete" "Info" "Beam" ID ID_MainActionList AT (PrevLeft PrevTop 52 1) NONUSABLE VISIBLEITEMS 6
   POPUPLIST ID ID_MainPopupTrigger ID_MainActionList
 
   BUTTON "New" ID ID_MainNewButton AT (65 145 AUTO AUTO) USABLE
@@ -33,28 +33,20 @@ BEGIN
 /*  TITLE "Editor"  */
 
   GRAFFITISTATEINDICATOR AT (149 0)
-/*  LABEL "Name:" AUTOID AT (0 16) */
   FIELD ID ID_EditorNameField AT (2 PrevTop 160 AUTO) USABLE LEFTALIGN EDITABLE UNDERLINED SINGLELINE MAXCHARS 31 AUTOSHIFT
 
-  /* note list */
-  LIST "" ID ID_EditorNoteList AT (0 PrevBottom+2 67 79) USABLE
-
-  /* note parametrs */
-  LABEL "Duration:" AUTOID AT (70 35)
-  POPUPTRIGGER "Custom" ID ID_EditorDurationPopup AT (PrevRight+3 PrevTop 60 AUTO) USABLE LEFTANCHOR
-  LIST "1/1" "1/2" "1/4" "1/8" "1/16" "1/32" "Custom" ID ID_EditorDurationList AT (PrevLeft PrevTop 52 1) NONUSABLE VISIBLEITEMS 7
-  POPUPLIST ID ID_EditorDurationPopup ID_EditorDurationList
+  GADGET ID ID_EditorNoteListGadget AT (0 PrevBottom+2 67 79) USABLE
 
   /* Control buttons */
-  PUSHBUTTON "<<" ID ID_EditorBegin AT (93 120 AUTO AUTO)
-  PUSHBUTTON ">"  ID ID_EditorPlay  AT (PrevRight+1 PrevTop AUTO PrevHeight)
-  PUSHBUTTON "[]" ID ID_EditorStop  AT (PrevRight+1 PrevTop AUTO PrevHeight)
-  PUSHBUTTON ">>" ID ID_EditorEnd   AT (PrevRight+1 PrevTop AUTO PrevHeight)
+/*   PUSHBUTTON "<<" ID ID_EditorBegin AT (93 120 AUTO AUTO) */
+/*   PUSHBUTTON ">"  ID ID_EditorPlay  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
+/*   PUSHBUTTON "[]" ID ID_EditorStop  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
+/*   PUSHBUTTON ">>" ID ID_EditorEnd   AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 
   BUTTON "Save" ID ID_EditorSaveButton AT (124 70 AUTO AUTO) USABLE
   BUTTON "Drop" ID ID_EditorDropButton AT (124 88 AUTO AUTO) USABLE
 
-  GADGET ID ID_EditorMidiGadget AT (2 125 158 34) USABLE
+  GADGET ID ID_EditorMidiKeysGadget AT (2 125 158 34) USABLE
 
 END
 

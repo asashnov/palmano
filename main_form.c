@@ -2,10 +2,20 @@
 #include "resource.h"
 #include "main_form.h"
 #include "editor_form.h"
+#include "utils.h"
+#include "smfutils.h"
 
 static MemHandle MidiListH = NULL;
 static UInt16 NumMidi;
 static Int16 list_Selected = -1;
+
+#if 0
+static Char * tips[] = {
+  "You can setup volume for playing in Pref  application, sound volume for games",
+  "You may put license key to memo in Unified category with title Palmano serial",
+  NULL
+};
+#endif
 
 /* draw one midi name in the list */
 static void
@@ -47,20 +57,19 @@ Play ()
 {
   SndMidiListItemType *p;
 
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
+  if (list_Selected < 0) {
+    FrmAlert (ID_MidiNotSelAlert);
+    return;
+  }
 
   p = MemHandleLock (MidiListH);
+  if (p == NULL) {
+    ErrNonFatalDisplay ("Can't lock MidiListH");
+    return;
+  }
 
-  if (p == NULL)
-    ErrFatalDisplay ("Can't lock MidiListH");
-
-  midiutil_PlayMidi (p[list_Selected].cardNo, p[list_Selected].dbID,
-		     p[list_Selected].uniqueRecID);
-
+  smfPlay(p+list_Selected);
+  
   MemHandleUnlock (MidiListH);
 }
 
@@ -70,16 +79,15 @@ Edit ()
 {
   SndMidiListItemType *p;
 
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
+  if (list_Selected < 0) {
+    FrmAlert (ID_MidiNotSelAlert);
+    return;
+  }
 
-  p = MemHandleLock (MidiListH);
-
-  if (p == NULL)
+  if((p = MemHandleLock (MidiListH)) == NULL) {
     ErrFatalDisplay ("Can't lock MidiListH");
+    return;
+  }
 
   MemMove (&EditorMidi.name[0], &p[list_Selected].name[0], sndMidiNameLength);
   EditorMidi.cardNo = p[list_Selected].cardNo;
@@ -87,7 +95,6 @@ Edit ()
   EditorMidi.uniqueRecID = p[list_Selected].uniqueRecID;
 
   MemHandleUnlock (MidiListH);
-
   FrmGotoForm (ID_EditorForm);
 }
 
@@ -175,6 +182,8 @@ MainFormClose (void)
     MemHandleFree (MidiListH);
     MidiListH = NULL;
   }
+  list_Selected = -1;
+  NumMidi = 0;
 }
 
 

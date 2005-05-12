@@ -1,20 +1,37 @@
-/******************************************************************************
- *
- * Copyright (c) 1994-1999 Palm Computing, Inc. or its subsidiaries.
- * All rights reserved.
- *
- * File: MakeSMF.c
- *
- * Description:
- *             	utility routines to create an SMF on the fly
- *
- * History:
- *                    2/12/98 David Fedor - created.
- *
- *****************************************************************************/
+#include "smfutils.h"
 
-#include <PalmOS.h>		// all the system toolbox headers
-#include "smf_util.h"
+#if 0
+
+  The SndMidiRecHdrType structure defines the fixed - size portion of a
+  Palm OS MIDI record.(See SndCallbackInfoType.)
+
+     typedef struct SndMidiRecHdrType
+     {
+       UInt32 signature;	//  Set to sndMidiRecSignature.
+       UInt8 bDataOffset;	//  Offset from the beginning of the record to the 
+                                //  standard MIDI File data stream.
+       UInt8 reserved;		//  Set to zero.
+     }
+SndMidiRecHdrType;
+
+     typedef struct SndMidiRecType
+     {
+       SndMidiRecHdrType hdr;
+       Char name[1];		// Track name: 1 or more characters including 
+//        NULL terminator. The length of name, including NULL
+//        terminator, must not be greater than sndMidiNameLength.
+     }
+SndMidiRecType
+
+     Each record in the database is a single SMF,
+       with a header structure containing the user -
+       visible name.The record includes a song header, then a track header,
+       followed by any number of events.
+#endif
+
+// Useful structure field offset macro
+#define prvFieldOffset(type, field) ((UInt32)(&((type*)0)->field))
+
 
 // A standard header for MIDI format 0 sounds, with one track.
 const UInt8 MidiHeader[] = {
@@ -33,7 +50,7 @@ const UInt8 MidiHeader[] = {
 };
 const UInt32 MidiHeaderLength = 24;
 
-MemHandle
+static MemHandle
 smf_StartSMF ()
 {
   UInt8 *buf;
@@ -51,7 +68,7 @@ smf_StartSMF ()
   return bufH;
 }
 
-MemHandle
+static MemHandle
 smf_AppendNote (MemHandle bufH, int note, int dur, int vel, int pause)
 {
   UInt8 *buf;
@@ -102,7 +119,7 @@ smf_AppendNote (MemHandle bufH, int note, int dur, int vel, int pause)
   return bufH;
 }
 
-MemHandle
+static MemHandle
 smf_FinishSMF (MemHandle bufH)
 {
   UInt8 *buf;
@@ -139,7 +156,8 @@ smf_FinishSMF (MemHandle bufH)
 }
 
 
-MemPtr smf_GetBeginNoteData (MemPtr smf_stream)
+static MemPtr
+smf_GetBeginNoteData (MemPtr smf_stream)
 {
   /*  return smf_stream + MidiHeaderLength; */
   
@@ -154,7 +172,8 @@ MemPtr smf_GetBeginNoteData (MemPtr smf_stream)
 
 
 /* Return 'true' if pointer on end of SMF data */
-Boolean smf_isEndOfNoteData (MemPtr smf_stream)
+static Boolean
+smf_isEndOfNoteData (MemPtr smf_stream)
 {
   UInt8 *p = (UInt8 *) smf_stream;
 
@@ -169,7 +188,8 @@ Boolean smf_isEndOfNoteData (MemPtr smf_stream)
 }
 
 
-MemPtr smf_ReadNote (MemPtr smf_stream, NoteType * n)
+static MemPtr 
+smf_ReadNote (MemPtr smf_stream, NoteType * n)
 {
   UInt8 *p;
 
@@ -202,4 +222,145 @@ MemPtr smf_ReadNote (MemPtr smf_stream, NoteType * n)
   return p;
 }
 
-/* end of file smf_util.c */
+int
+smfLoad(SndMidiListItemType srcMidi, NoteListPtr dstList)
+{
+  Err err = false;
+  MemHandle midiH;
+  SndMidiRecHdrType *midiHdrP;
+  UInt8 *midiStreamP;
+  DmOpenRef dbP = NULL;
+  UInt16 recIndex;
+  MemPtr p;
+  NoteType note;
+
+  dbP = DmOpenDatabase (srcMidi.cardNo, srcMidi.dbID, dmModeReadOnly);
+  if (!dbP)
+    err = true;
+
+  if (!err)
+    err = DmFindRecordByID (dbP, srcMidi.uniqueRecID, &recIndex);
+
+  if (!err) {
+    midiH = DmQueryRecord (dbP, recIndex);
+    midiHdrP = MemHandleLock (midiH);
+    midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
+
+    if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
+      notelist_clear(dstList);
+      while (!smf_isEndOfNoteData(p)) {
+	p = smf_ReadNote(p, &note);
+	notelist_append(dstList, &note);
+      }
+    }
+    MemPtrUnlock (midiHdrP);
+  }
+
+  if (dbP)
+    DmCloseDatabase (dbP);
+
+  if (err)
+    ErrDisplay ("smfLoad(): error occure in function.");
+  return true;
+}
+
+int
+smfSave(SndMidiListItemType dstMidi, const NoteListPtr srcList)
+{
+  Err err = 0;
+  DmOpenRef dbP;
+  UInt16 recIndex;
+  MemHandle recH;
+  UInt8 *recP;
+  UInt8 *smfP;
+  UInt8 				bMidiOffset;
+  UInt32				dwSmfSize;
+  SndMidiRecHdrType recHdr;
+  MemHandle smfH;
+  NoteType *notes;
+  Int16 i;
+
+  /* generate SMF from NoteList */
+  smfH = smf_StartSMF ();
+  notes = MemHandleLock(srcList->bufH);
+  for (i = 0; i < srcList->num; i++)
+      smf_AppendNote (smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
+  MemPtrUnlock(notes);
+  smf_FinishSMF (smfH);
+
+  /* save SMF */
+  bMidiOffset = sizeof(SndMidiRecHdrType) + StrLen(dstMidi.name) + 1;
+  dwSmfSize = MemHandleSize(smfH);
+  recHdr.signature = sndMidiRecSignature;
+  recHdr.reserved = 0;
+  recHdr.bDataOffset = bMidiOffset;
+  dbP = DmOpenDatabaseByTypeCreator (sysFileTMidi, sysFileCSystem, dmModeReadWrite | dmModeExclusive);
+  //  dbP = DmOpenDatabaseByTypeCreator(dstMidi.);
+  if (!dbP)
+    return 1;
+
+  /* Allocate a new record for the midi resource */
+  recIndex = dmMaxRecordIndex;
+  recH = DmNewRecord (dbP, &recIndex, bMidiOffset + dwSmfSize);
+  if (!recH)
+    return 2;
+
+  /* Lock down the source SMF and target record and copy the data */
+  smfP = MemHandleLock (smfH);
+  recP = MemHandleLock (recH);
+
+  err = DmWrite (recP, 0 /* offset */, &recHdr, sizeof (recHdr));
+  if (!err)
+    err = DmStrCopy (recP, prvFieldOffset(SndMidiRecType, name) /* offset of field name */, dstMidi.name);
+  if (!err)
+    err = DmWrite (recP, bMidiOffset, smfP, dwSmfSize);
+
+  /* Unlock the pointers */
+  MemHandleUnlock (smfH);
+  MemHandleUnlock (recH);
+
+  /*Because DmNewRecord marks the new record as busy,
+    we must call DmReleaseRecord before closing the database */
+  DmReleaseRecord (dbP, recIndex, 1);
+  DmCloseDatabase (dbP);
+  return err;
+}
+
+int
+smfPlay(SndMidiListItemType *midi)
+{
+  Err err = false;
+  MemHandle midiH;
+  SndMidiRecHdrType *midiHdrP;
+  UInt8 *midiStreamP;
+  DmOpenRef dbP = NULL;
+  UInt16 recIndex;
+  SndSmfOptionsType smfOpt;
+
+  dbP = DmOpenDatabase (midi->cardNo, midi->dbID, dmModeReadOnly);
+  if (!dbP)
+    err = true;
+
+  if (!err)
+    err = DmFindRecordByID (dbP, midi->uniqueRecID, &recIndex);
+
+  if (!err) {
+    midiH = DmQueryRecord (dbP, recIndex);
+    midiHdrP = MemHandleLock (midiH);
+    midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
+    smfOpt.dwStartMilliSec = 0;
+    smfOpt.dwEndMilliSec = sndSmfPlayAllMilliSec;
+    smfOpt.amplitude = (UInt16) PrefGetPreference (prefGameSoundVolume);
+    smfOpt.interruptible = true; /* The sound can be interrupted by a key/digitizer event */
+    smfOpt.reserved = 0;
+    err = SndPlaySmf (NULL, sndSmfCmdPlay, midiStreamP, &smfOpt, NULL, NULL, false);
+    MemPtrUnlock (midiHdrP);
+  }
+
+  if (dbP)
+    DmCloseDatabase (dbP);
+
+  if (err)
+    ErrDisplay ("smfPlay(): error occure in function.");
+  return true;
+}

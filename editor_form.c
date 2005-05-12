@@ -1,10 +1,9 @@
 #include <PalmOS.h>
 #include "resource.h"
 #include "editor_form.h"
-#include "notes.h"
-
-/* Current song */
-SndMidiListItemType EditorMidi;   
+#include "mkeys.h"
+#include "notelist.h"
+#include "utils.h"
 
 /* 
 SndMidiListItemType:
@@ -12,59 +11,79 @@ SndMidiListItemType:
   LocalID	EditorDbID;
   UInt32	EditorUniqueRecID;
   UInt16	EditorCardNo;  */
+SndMidiListItemType EditorMidi;	/* current song */
 
-/* Note list. Functions for operate list in midi_util.c */
-static MemHandle EditorNoteBufH = NULL; /* note buffer */
-static UInt16 EditorNumNotes;	/* num notes in current use */
-
-static UInt16 EditorNoteListFirst;	// first displaying note
-
-
-void DrawOneNoteInList (Int16 itemNum,
-			RectangleType * bounds, Char ** itemsText);
-
-
-void
-PlayNote (const NoteType *n)
-{
-  SndCommandType cmd;
-
-  cmd.cmd = sndCmdNoteOn;
-  cmd.param1 = n->note;		// the midi note to play
-  cmd.param2 = n->dur;		// milliseconds to play the note
-  cmd.param3 = 127;		// play at max. amplitude
-
-  // play the sound asynchronously
-  SndDoCmd (0, &cmd, true);
-}
-
-
-
+static NoteListType notelist;
+static MidiKeysType midikeys;
 
 //  ErrDisplay("editor form: All OK!!!!");
 
-
-
-/*****************************************
-          Editor Form
-*****************************************/
+static void 
+FormUpdate()
+{
+  FormPtr frm = FrmGetActiveForm ();
+  FrmDrawForm (frm);
+  midikeys_draw(&midikeys);
+  notelist_draw(&notelist);
+}
 
 static void
-EditorDropButtonClick (void)
+FormOpen (void)
 {
-// TODO: alert 
-// Do you want exit without save this song?
-// [ ] Don't ask in future
-// [Yes] [No] [Cancel]
+  FormGadgetType *notelistGadget = GetObjectFromActiveForm (ID_EditorNoteListGadget);
+  FormGadgetType *midekeysGadget = GetObjectFromActiveForm (ID_EditorMidiKeysGadget);
+
+  notelist_init(&notelist, notelistGadget);
+  midikeys_init(&midikeys, midekeysGadget);
+
+  // set the name field
+  SetFieldTextFromStr (ID_EditorNameField, &EditorMidi.name[0]);
+
+  if (EditorMidi.dbID != 0) {
+    // load MIDI in note editor if it not new MIDI
+
+    // TODO: call midi_load_notes () function from midi_util
+  }
+  FormUpdate();
+}
+
+static Boolean
+FormPenDownEvent(EventType * e)
+{
+  FormPtr frm = FrmGetActiveForm ();
+  UInt16 objIndex;
+  RectangleType r;
+
+  objIndex = FrmGetObjectIndex (frm, ID_EditorMidiKeysGadget);
+  FrmGetObjectBounds (frm, objIndex, &r);
+  if (RctPtInRectangle (e->screenX, e->screenY, &r)) {
+    midikeys_tapped(&midikeys, e->screenX, e->screenY);
+    return true;
+  }
+  objIndex = FrmGetObjectIndex (frm, ID_EditorNoteListGadget);
+  FrmGetObjectBounds (frm, objIndex, &r);
+  if (RctPtInRectangle (e->screenX, e->screenY, &r)) {
+    notelist_tapped(&notelist, e->screenX, e->screenY);
+    return true;
+  }
+  return false;
+}
+
+static void
+DropButtonClick (void)
+{
+  // TODO: alert 
+  // Do you want exit without save this song?
+  // [ ] Don't ask in future
+  // [Yes] [No] [Cancel]
 
   FrmGotoForm (ID_MainForm);
 }
 
-
 static void
-EditorSaveButtonClick (void)
+SaveButtonClick (void)
 {
-// TODO:
+  // TODO:
 
   // create palmano.pdb if not exist
 
@@ -82,7 +101,7 @@ EditorSaveButtonClick (void)
   // save MIDI notes from editor buffer (by calling midi_save_notes() from midi_utils)
 
 
-// Do this from following code:
+  // Do this from following code:
 
 #if 0
   Char name[sndMidiNameLength];
@@ -98,22 +117,22 @@ EditorSaveButtonClick (void)
     DmCreateDatabase (cardNo, "palmano.pdb", "Pmno", "smfr",
 		      1 /*Boolean resDB */ )
     if (err == errNone || err == dmErrAlreadyExists)
-    {
-      // not finded, try to create it
-      if ((err = DmGetLastErr ()) != dmErrCantFind)
+      {
+	// not finded, try to create it
+	if ((err = DmGetLastErr ()) != dmErrCantFind)
 	{
 	  ErrDisplay ("Can't open database palmano.pdb");
 	  return;
 	}
-    }
-  else
-    {
-      ErrDisplay ("Can't create database palmano.pdb");
-      return;
-    }
+      }
+    else
+      {
+	ErrDisplay ("Can't create database palmano.pdb");
+	return;
+      }
 
-  dbID = DmFindDatabase (cardNo, "palmano.pdb"));
-
+  dbID = DmFindDatabase (cardNo, "palmano.pdb");
+  
   // create in it database new (empty) record
 
 
@@ -129,175 +148,60 @@ EditorSaveButtonClick (void)
   FrmGotoForm (ID_MainForm);
 }
 
-
-void EditorAddNoteToBuffer (const NoteType *note)
+static void 
+NoteButtonPressed (Int16 note)
 {
-  MemHandle nl; /* new note list handle */
-
-  nl = midiutil_AppendNoteToList (EditorNoteBufH, &EditorNumNotes, note);
-  
-  if (nl != NULL)
-  EditorNoteBufH = nl;
+  NoteType n = 
+    { note, 100, 40, 20 };
+  debugPrintf("NoteButtonPressed(): note %d is pressed\n", note);
+  notelist_append(&notelist, &n);
+  notelist_draw(&notelist);
+  PlayNote (&n);
 }
-
-
-static void EditorRefreshNoteList (void)
-{
-  ListPtr list = GetObjectFromActiveForm (ID_EditorNoteList);
-    LstSetListChoices (list, NULL, EditorNumNotes);
-    LstDrawList (list);
-}
-
-
-void EditorNoteButtonPressed (int note_pressed)
-{
-  NoteType note;
-
-  note.note  = note_pressed;
-  note.dur   = 100;
-  note.vel   = 40;
-  note.pause = 20;
-
-  EditorAddNoteToBuffer (&note);
-  EditorRefreshNoteList ();
-
-  PlayNote (&note);
-}
-
-/* draw note in list callback function */
-void
-  DrawOneNoteInList (Int16 itemNum, RectangleType * bounds, Char ** itemsText)
-{
-  int note, octave;
-  int base;
-  static char *note_name[12] =
-  {
-  "C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"};
-  NoteType *n;
-  UInt8 *p;
-  char buf[30];
-
-  p = MemHandleLock (EditorNoteBufH);
-  n = (NoteType*) p + (itemNum * sizeof (NoteType));
-
-  note = n->note;
-
-  if (note < 0)
-    {
-      StrPrintF (buf, "---");
-      return;
-    }
-
-  octave = note / 12;
-  base = note % 12;
-
-  StrPrintF (buf, "%s%d %3d", note_name[base], octave, n->dur);
-
-  DrawCharsToFitWidth (buf, bounds);
-
-  MemPtrUnlock (p);
-}
-
 
 static void
-EditorFormOpen (void)
+FormClose (void)
 {
-  ListType *list;
-  FormGadgetType *mkGadget;
-  FormType *form = FrmGetActiveForm ();
-  mkGadget = GetObjectFromActiveForm (ID_EditorMidiGadget);
-
-  // set the name field
-  SetFieldTextFromStr (ID_EditorNameField, &EditorMidi.name[0]);
-
-  // Alloc note buffer
-  if (EditorNoteBufH != NULL)
-    MemHandleFree (EditorNoteBufH);
-  EditorNoteBufH = MemHandleNew (sizeof (NoteType));
-
-  // init editor variables
-  EditorNumNotes = 0;
-  EditorNoteListFirst = 0;
-
-  // setup note list
-  list = GetObjectFromActiveForm (ID_EditorNoteList);
-  LstSetDrawFunction (list, DrawOneNoteInList);
-  LstSetListChoices (list, NULL, 0);
-
-  // load MIDI in note editor if it not new MIDI
-  if (EditorMidi.dbID != 0)
-    {
-// TODO: call midi_load_notes () function from midi_util
-    }
-
-  midi_keyboard_init ();
-
-  FrmDrawForm (form);
-
-  /* Draw midi keyboard */
-  midikeyb_gadget_cb (mkGadget, formGadgetDrawCmd, NULL);
-}
-
-
-static void
-EditorFormClose (void)
-{
-  if (EditorNoteBufH != NULL) {
-    MemHandleFree (EditorNoteBufH);
-    EditorNoteBufH = NULL;
-  }
+  notelist_free(&notelist);
 }
 
 
 /* Editor Form event handler */
 Boolean EditorFormEventHandler (EventType * e)
 {
-  FormGadgetType *mkGadget;
-  /*  my be need in future 
-FormType *form = FrmGetActiveForm ();  */
-  mkGadget = GetObjectFromActiveForm (ID_EditorMidiGadget);
-
-  switch (e->eType)
+  switch ((UInt16)e->eType)
     {
-
     case frmOpenEvent:
-      EditorFormOpen ();
+      FormOpen ();
+      return true;
+
+    case frmUpdateEvent:
+      FormUpdate();
       return true;
 
     case frmCloseEvent:
-      EditorFormClose ();
+      FormClose ();
       return false;		/* return unhandled status for call default system handler (witch free form data). Accordin with standard sdk examples */
 
-    case ctlSelectEvent:
+    case penDownEvent:
+      return FormPenDownEvent(e);
 
+    case ctlSelectEvent:
       switch (e->data.ctlSelect.controlID)
 	{
 	case ID_EditorDropButton:
-	  EditorDropButtonClick ();
+	  DropButtonClick ();
 	  return true;
 
 	case ID_EditorSaveButton:
-	  EditorSaveButtonClick ();
+	  SaveButtonClick ();
 	  return true;
 	}
-
-    case penDownEvent:
-      {
-	FormPtr frm = FrmGetActiveForm ();
-	UInt16 gadgetIndex = FrmGetObjectIndex (frm, ID_EditorMidiGadget);
-	RectangleType bounds;
-
-	FrmGetObjectBounds (frm, gadgetIndex, &bounds);
-	if (RctPtInRectangle (e->screenX, e->screenY, &bounds))
-	  {
-	    midikeyb_gadget_cb (mkGadget, formGadgetHandleEventCmd, e);
-	    return true;
-	  }
-      }
       break;
-    default:
-      return false;
-    }
 
+    case MKeysNoteTappedEvent:
+      NoteButtonPressed(e->data.generic.datum[0]);
+      return true;
+    }
   return false;
 }

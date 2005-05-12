@@ -1,21 +1,13 @@
 #include <PalmOS.h>
 #include <SysEvtMgr.h>
 #include <Rect.h>
-
 #include "resource.h"
 #include "main_form.h"
 #include "editor_form.h"
 #include "option_form.h"
+#include "utils.h"
 
 static UInt32 rom_version;
-
-
-
-
-//  ErrDisplay("All OK!!!!");
-
-
-
 
 void
 StopApplication (void)
@@ -36,14 +28,18 @@ ApplicationHandleEvent (EventType * event)
   UInt16 formId;
   FormPtr frm;
 
-  if (event->eType == frmLoadEvent)
+  if (event->eType == frmLoadEvent) 
     {
-      /* Load the form resource. */
+      /* Load and initialize a form resource. */
       formId = event->data.frmLoad.formID;
-      frm = FrmInitForm (formId); /* Load and initialize a form resource. */
-      FrmSetActiveForm (frm);	/* Set the active form. All input (key and pen) is directed 
-				   to the active form and all drawing occurs there */
+      frm = FrmInitForm (formId); 
 
+      /* Set the active form. 
+       * All input (key and pen) is directed 
+       * to the active form and all drawing occurs there
+       */
+      FrmSetActiveForm (frm);	
+      
       /* Registers the event handler callback routine for the specified form. */
       switch (formId)
 	{
@@ -78,6 +74,8 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
       if (FtrGet (sysFtrCreator, sysFtrNumROMVersion, &rom_version) != 0)
 	rom_version = 0;	/* Set to very low version if FtrGet failed.  */
 
+      debugPrintf("Start logging\n");
+
       FrmGotoForm (ID_MainForm);
 
       do
@@ -93,7 +91,6 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
 		if (!ApplicationHandleEvent (&event)) /* only FrmLoadEvent */
 
 		  FrmDispatchEvent (&event);
-
 	}
       while (event.eType != appStopEvent);
 

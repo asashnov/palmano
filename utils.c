@@ -1,5 +1,27 @@
 #include <PalmOS.h>
-#include "util.h"
+#include "utils.h"
+
+#ifdef DEBUG
+
+#include <stdarg.h>
+
+#define HOSTLOGNAME "palmano.log"
+
+void debugPrintf(char *fmt, ...)
+{
+  Char text[256];
+  static HostFILE  *log = NULL;
+  va_list args;
+  va_start(args, fmt);
+
+  if (log == NULL)
+    log=HostFOpen(HOSTLOGNAME,"w");
+  StrVPrintF(text, fmt, args);
+  HostFPutS(text, log);
+  HostFFlush(log);
+  va_end(args);
+}
+#endif
 
 void *
 GetObjectFromActiveForm (UInt16 id)
@@ -60,4 +82,18 @@ SetFieldTextFromStr (UInt16 fieldID, Char * strP)
 
   // set the field to the handle
   return SetFieldTextFromHandle (fieldID, txtH);
+}
+
+void
+PlayNote (const NoteType *n)
+{
+  SndCommandType cmd;
+
+  cmd.cmd = sndCmdNoteOn;
+  cmd.param1 = n->note;		// the midi note to play
+  cmd.param2 = n->dur;		// milliseconds to play the note
+  cmd.param3 = 127;		// play at max. amplitude
+
+  // play the sound asynchronously
+  SndDoCmd (0, &cmd, true);
 }

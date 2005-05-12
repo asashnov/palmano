@@ -1,13 +1,23 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-extern void* GetObjectFromActiveForm(UInt16 id);
+#include "notelist.h"
 
-extern void DrawCharsToFitWidth(const Char *text, RectangleType *bounds);
+#ifdef DEBUG
+  void debugPrintf(char *fmt, ...);
+#else
+# define debugPrintf \/\/
+#endif
 
-extern FieldPtr SetFieldTextFromHandle(UInt16 fieldID, MemHandle txtH);
+extern void* GetObjectFromActiveForm (UInt16 id);
+
+extern void DrawCharsToFitWidth (const Char *text, RectangleType *bounds);
+
+extern FieldPtr SetFieldTextFromHandle (UInt16 fieldID, MemHandle txtH);
 
 /* Allocates new handle and copies incoming string */
-extern FieldPtr SetFieldTextFromStr(UInt16 fieldID, Char *strP);
+extern FieldPtr SetFieldTextFromStr (UInt16 fieldID, Char *strP);
+
+extern void PlayNote (const NoteType *n);
 
 #endif
