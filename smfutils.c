@@ -1,37 +1,7 @@
 #include "smfutils.h"
 
-#if 0
-
-  The SndMidiRecHdrType structure defines the fixed - size portion of a
-  Palm OS MIDI record.(See SndCallbackInfoType.)
-
-     typedef struct SndMidiRecHdrType
-     {
-       UInt32 signature;	//  Set to sndMidiRecSignature.
-       UInt8 bDataOffset;	//  Offset from the beginning of the record to the 
-                                //  standard MIDI File data stream.
-       UInt8 reserved;		//  Set to zero.
-     }
-SndMidiRecHdrType;
-
-     typedef struct SndMidiRecType
-     {
-       SndMidiRecHdrType hdr;
-       Char name[1];		// Track name: 1 or more characters including 
-//        NULL terminator. The length of name, including NULL
-//        terminator, must not be greater than sndMidiNameLength.
-     }
-SndMidiRecType
-
-     Each record in the database is a single SMF,
-       with a header structure containing the user -
-       visible name.The record includes a song header, then a track header,
-       followed by any number of events.
-#endif
-
 // Useful structure field offset macro
 #define prvFieldOffset(type, field) ((UInt32)(&((type*)0)->field))
-
 
 // A standard header for MIDI format 0 sounds, with one track.
 const UInt8 MidiHeader[] = {
@@ -51,20 +21,21 @@ const UInt8 MidiHeader[] = {
 const UInt32 MidiHeaderLength = 24;
 
 static MemHandle
-smf_StartSMF ()
+smf_StartSMF (MemHandle bufH)
 {
   UInt8 *buf;
-  MemHandle bufH;
 
-  bufH = MemHandleNew (MidiHeaderLength);
+  if (! MemHandleResize(bufH, MidiHeaderLength)) {
+    ErrFatalDisplay("smf_StartSMF: can't resize buffer");
+  }
 
-  if (bufH)
-    {
-      buf = MemHandleLock (bufH);
-      MemMove (buf, (void *) MidiHeader, MidiHeaderLength);
-      MemHandleUnlock (bufH);
-    }
-
+  if (bufH == NULL) {
+  } else if ((buf = MemHandleLock (bufH)) == NULL) {
+    ErrFatalDisplay("Can't lock bufH handle");
+  } else {
+    MemMove (buf, (void *) MidiHeader, MidiHeaderLength);
+    MemHandleUnlock (bufH);
+  }
   return bufH;
 }
 
@@ -222,112 +193,76 @@ smf_ReadNote (MemPtr smf_stream, NoteType * n)
   return p;
 }
 
-int
-smfLoad(SndMidiListItemType srcMidi, NoteListPtr dstList)
+void
+smfutils_load(MemHandle midiH, NoteListPtr dstList)
 {
-  Err err = false;
-  MemHandle midiH;
   SndMidiRecHdrType *midiHdrP;
   UInt8 *midiStreamP;
-  DmOpenRef dbP = NULL;
-  UInt16 recIndex;
   MemPtr p;
   NoteType note;
 
-  dbP = DmOpenDatabase (srcMidi.cardNo, srcMidi.dbID, dmModeReadOnly);
-  if (!dbP)
-    err = true;
+  midiHdrP = MemHandleLock (midiH);
+  midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
 
-  if (!err)
-    err = DmFindRecordByID (dbP, srcMidi.uniqueRecID, &recIndex);
-
-  if (!err) {
-    midiH = DmQueryRecord (dbP, recIndex);
-    midiHdrP = MemHandleLock (midiH);
-    midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
-
-    if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
-      notelist_clear(dstList);
-      while (!smf_isEndOfNoteData(p)) {
-	p = smf_ReadNote(p, &note);
-	notelist_append(dstList, &note);
-      }
+  if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
+    notelist_clear(dstList);
+    while (!smf_isEndOfNoteData(p)) {
+      p = smf_ReadNote(p, &note);
+      notelist_append(dstList, &note);
     }
-    MemPtrUnlock (midiHdrP);
   }
-
-  if (dbP)
-    DmCloseDatabase (dbP);
-
-  if (err)
-    ErrDisplay ("smfLoad(): error occure in function.");
-  return true;
+  MemPtrUnlock (midiHdrP);
 }
 
 int
-smfSave(SndMidiListItemType dstMidi, const NoteListPtr srcList)
+smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
 {
-  Err err = 0;
-  DmOpenRef dbP;
-  UInt16 recIndex;
-  MemHandle recH;
   UInt8 *recP;
-  UInt8 *smfP;
-  UInt8 				bMidiOffset;
-  UInt32				dwSmfSize;
+  UInt8  MidiOffset;
+  UInt32 SmfSize;
   SndMidiRecHdrType recHdr;
-  MemHandle smfH;
   NoteType *notes;
   Int16 i;
 
   /* generate SMF from NoteList */
-  smfH = smf_StartSMF ();
+  smfH = smf_StartSMF(recH);
   notes = MemHandleLock(srcList->bufH);
   for (i = 0; i < srcList->num; i++)
-      smf_AppendNote (smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
+      smf_AppendNote (recH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
   MemPtrUnlock(notes);
-  smf_FinishSMF (smfH);
+  smf_FinishSMF (recH);
 
   /* save SMF */
-  bMidiOffset = sizeof(SndMidiRecHdrType) + StrLen(dstMidi.name) + 1;
-  dwSmfSize = MemHandleSize(smfH);
+  /* Now recH contains only MIDI record, need add Palm OS header before that */
+  MidiOffset = sizeof(SndMidiRecHdrType) + StrLen(midiname) + 1;
+  SmfSize = MemHandleSize(recH); /* size of all MIDI section (without PalmOS header) */
   recHdr.signature = sndMidiRecSignature;
   recHdr.reserved = 0;
   recHdr.bDataOffset = bMidiOffset;
-  dbP = DmOpenDatabaseByTypeCreator (sysFileTMidi, sysFileCSystem, dmModeReadWrite | dmModeExclusive);
-  //  dbP = DmOpenDatabaseByTypeCreator(dstMidi.);
-  if (!dbP)
-    return 1;
 
-  /* Allocate a new record for the midi resource */
-  recIndex = dmMaxRecordIndex;
-  recH = DmNewRecord (dbP, &recIndex, bMidiOffset + dwSmfSize);
-  if (!recH)
-    return 2;
+  /* resize record in DB for insert PalmOS header */
+  if (!MemHandleResize(smfH, MidiOffset + SmfSize))
+    ErrFatalDisplay("Can't resize handle");
 
   /* Lock down the source SMF and target record and copy the data */
-  smfP = MemHandleLock (smfH);
-  recP = MemHandleLock (recH);
+  recP = MemHandleLock(recH);
+
+  /* move MIDI data up (for insert PalmOS header */
+  if(!MemMove(recP + MidiOffset, recP, SmSize))
+    ErrFatalDisplay("Can't move data for insert Palm Midi header in DB");
 
   err = DmWrite (recP, 0 /* offset */, &recHdr, sizeof (recHdr));
   if (!err)
-    err = DmStrCopy (recP, prvFieldOffset(SndMidiRecType, name) /* offset of field name */, dstMidi.name);
+    err = DmStrCopy (recP, prvFieldOffset(SndMidiRecType, name) /* offset of field name */, midiname);
   if (!err)
     err = DmWrite (recP, bMidiOffset, smfP, dwSmfSize);
 
-  /* Unlock the pointers */
-  MemHandleUnlock (smfH);
   MemHandleUnlock (recH);
-
-  /*Because DmNewRecord marks the new record as busy,
-    we must call DmReleaseRecord before closing the database */
-  DmReleaseRecord (dbP, recIndex, 1);
-  DmCloseDatabase (dbP);
   return err;
 }
 
 int
-smfPlay(SndMidiListItemType *midi)
+smfutils_play(SndMidiListItemType *midi)
 {
   Err err = false;
   MemHandle midiH;
