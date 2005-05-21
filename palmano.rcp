@@ -1,6 +1,6 @@
 #include "resource.h"
 
-VERSION "0.2"
+VERSION "0.5"
 
 /* Main form and menu */
 

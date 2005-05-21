@@ -1,4 +1,5 @@
 #include "smfutils.h"
+#include "utils.h"
 
 // Useful structure field offset macro
 #define prvFieldOffset(type, field) ((UInt32)(&((type*)0)->field))
@@ -23,19 +24,21 @@ const UInt32 MidiHeaderLength = 24;
 static MemHandle
 smf_StartSMF (MemHandle bufH)
 {
-  UInt8 *buf;
+  Err err;
+  UInt8 *bufP;
 
-  if (! MemHandleResize(bufH, MidiHeaderLength)) {
+  if ((err = MemHandleResize(bufH, MidiHeaderLength)) != 0) {
     ErrFatalDisplay("smf_StartSMF: can't resize buffer");
   }
 
-  if (bufH == NULL) {
-  } else if ((buf = MemHandleLock (bufH)) == NULL) {
+  if ((bufP = MemHandleLock(bufH)) == NULL) {
     ErrFatalDisplay("Can't lock bufH handle");
-  } else {
-    MemMove (buf, (void *) MidiHeader, MidiHeaderLength);
-    MemHandleUnlock (bufH);
   }
+
+  MemMove (bufP, (void *) MidiHeader, MidiHeaderLength);
+  MemHandleUnlock (bufH);
+  debugPrintf("smf_StartSMF(): exit OK");
+
   return bufH;
 }
 
@@ -217,6 +220,7 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
 int
 smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
 {
+  Err err;
   UInt8 *recP;
   UInt8  MidiOffset;
   UInt32 SmfSize;
@@ -225,7 +229,7 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   Int16 i;
 
   /* generate SMF from NoteList */
-  smfH = smf_StartSMF(recH);
+  recH = smf_StartSMF(recH);
   notes = MemHandleLock(srcList->bufH);
   for (i = 0; i < srcList->num; i++)
       smf_AppendNote (recH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
@@ -238,24 +242,26 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   SmfSize = MemHandleSize(recH); /* size of all MIDI section (without PalmOS header) */
   recHdr.signature = sndMidiRecSignature;
   recHdr.reserved = 0;
-  recHdr.bDataOffset = bMidiOffset;
+  recHdr.bDataOffset = MidiOffset;
 
   /* resize record in DB for insert PalmOS header */
-  if (!MemHandleResize(smfH, MidiOffset + SmfSize))
+  if (!MemHandleResize(recH, MidiOffset + SmfSize))
     ErrFatalDisplay("Can't resize handle");
 
   /* Lock down the source SMF and target record and copy the data */
   recP = MemHandleLock(recH);
 
   /* move MIDI data up (for insert PalmOS header */
-  if(!MemMove(recP + MidiOffset, recP, SmSize))
+  if(!MemMove(recP + MidiOffset, recP, SmfSize))
     ErrFatalDisplay("Can't move data for insert Palm Midi header in DB");
 
   err = DmWrite (recP, 0 /* offset */, &recHdr, sizeof (recHdr));
   if (!err)
     err = DmStrCopy (recP, prvFieldOffset(SndMidiRecType, name) /* offset of field name */, midiname);
-  if (!err)
-    err = DmWrite (recP, bMidiOffset, smfP, dwSmfSize);
+ 
+  /* don't need to save, already in place */
+  // if (!err)
+  //  err = DmWrite (recP, MidiOffset, recP, dwSmfSize);
 
   MemHandleUnlock (recH);
   return err;

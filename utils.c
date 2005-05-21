@@ -75,7 +75,7 @@ SetFieldTextFromStr (UInt16 fieldID, Char * strP)
     return NULL;
 
   // copy the string to the locked handle.
-  StrCopy (MemHandleLock (txtH), strP);
+  StrCopy (MemHandleLock(txtH), strP);
 
   // unlock the string handle.
   MemHandleUnlock (txtH);

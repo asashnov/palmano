@@ -4,19 +4,12 @@
 #include "mkeys.h"
 #include "notelist.h"
 #include "utils.h"
+#include "smfutils.h"
 
-/* 
-SndMidiListItemType:
-  Char	EditorName[sndMidiNameLength];
-  LocalID	EditorDbID;
-  UInt32	EditorUniqueRecID;
-  UInt16	EditorCardNo;  */
 SndMidiListItemType EditorMidi;	/* current song */
 
 static NoteListType notelist;
 static MidiKeysType midikeys;
-
-//  ErrDisplay("editor form: All OK!!!!");
 
 static void 
 FormUpdate()
@@ -25,6 +18,34 @@ FormUpdate()
   FrmDrawForm (frm);
   midikeys_draw(&midikeys);
   notelist_draw(&notelist);
+}
+
+static Int16
+LoadSMF(SndMidiListItemType midi, NoteListPtr list)
+{
+  Err err = false;
+  DmOpenRef dbP;
+  UInt16 recIndex;
+  MemHandle midiH;
+
+  dbP = DmOpenDatabase (midi.cardNo, midi.dbID, dmModeReadOnly);
+  if (!dbP)
+    err = true;
+
+  if (!err)
+    err = DmFindRecordByID(dbP, midi.uniqueRecID, &recIndex);
+
+  if (!err) {
+    midiH = DmQueryRecord (dbP, recIndex); 
+    smfutils_load(midiH, list);
+  }
+
+  if (dbP)
+    DmCloseDatabase (dbP);
+
+  if (err)
+    ErrDisplay ("LoadSMF(): error occure in function.");
+  return true;
 }
 
 static void
@@ -36,14 +57,11 @@ FormOpen (void)
   notelist_init(&notelist, notelistGadget);
   midikeys_init(&midikeys, midekeysGadget);
 
-  // set the name field
   SetFieldTextFromStr (ID_EditorNameField, &EditorMidi.name[0]);
 
-  if (EditorMidi.dbID != 0) {
-    // load MIDI in note editor if it not new MIDI
+  if (EditorMidi.dbID != 0)
+   LoadSMF(EditorMidi, &notelist);
 
-    // TODO: call midi_load_notes () function from midi_util
-  }
   FormUpdate();
 }
 
@@ -80,72 +98,57 @@ DropButtonClick (void)
   FrmGotoForm (ID_MainForm);
 }
 
+/** Returns reference to opened Palmano database, create it if not exit */
+static DmOpenRef
+getPalmanoDB()
+{
+  DmOpenRef dbP;
+
+
+  dbP = DmOpenDatabaseByTypeCreator(sysFileTMidi, sysFileCSystem, dmModeReadWrite | dmModeExclusive);
+  if (!dbP)
+    ErrFatalDisplay("Can't open system MIDI database!");
+  
+  return dbP;
+}
+
+
 static void
 SaveButtonClick (void)
 {
-  // TODO:
+  DmOpenRef openRef;
+  UInt16 recIndex;
+  MemHandle recH;
 
-  // create palmano.pdb if not exist
+  if (EditorMidi.dbID == 0) {
+    debugPrintf("SaveButtonClick(): new midi create required.\n");
 
-  // open palmano.pdb
+    /* New song- create new record in DB */
+    openRef = getPalmanoDB();
+    debugPrintf("SaveButtonClick(): getPalmanoDB returns %x\n", openRef);
+    ErrFatalDisplayIf(openRef == 0, "Can't open System MIDI Sounds database");
 
-  if (EditorMidi.dbID == 0)
-    {
-      // create new record in palnamo.pdb
+    recIndex = dmMaxRecordIndex;
+    recH = DmNewRecord(openRef, &recIndex, 5); /* initial size is 5 bytes */
+    if (recH == 0) {
+      Err err = DmGetLastErr();
+      ErrAlert(err);
+      ErrFatalDisplay("Can't create new record in palmano DB");
     }
-
-  // open appropriate record (by number)
-
-  // save MIDI name
-
-  // save MIDI notes from editor buffer (by calling midi_save_notes() from midi_utils)
-
-
-  // Do this from following code:
-
-#if 0
-  Char name[sndMidiNameLength];
-  UInt32 uniqueRecID;
-  LocalID dbID;
-  UInt16 cardNo;
-
-  Err err;
-
-  cardNo = 0;
-
-  err =
-    DmCreateDatabase (cardNo, "palmano.pdb", "Pmno", "smfr",
-		      1 /*Boolean resDB */ )
-    if (err == errNone || err == dmErrAlreadyExists)
-      {
-	// not finded, try to create it
-	if ((err = DmGetLastErr ()) != dmErrCantFind)
-	{
-	  ErrDisplay ("Can't open database palmano.pdb");
-	  return;
-	}
-      }
-    else
-      {
-	ErrDisplay ("Can't create database palmano.pdb");
-	return;
-      }
-
-  dbID = DmFindDatabase (cardNo, "palmano.pdb");
+  } else {
+    /* replace old song in-place */
+    openRef = DmOpenDatabase (EditorMidi.cardNo, EditorMidi.dbID, dmModeReadWrite | dmModeExclusive);
+    ErrFatalDisplayIf(!openRef, "Can't open old song database for record");
+    recIndex = EditorMidi.uniqueRecID;
+    recH = DmGetRecord(openRef, recIndex);
+    ErrFatalDisplayIf(!recH, "Can't get old song record for writing");
+  }
+    
+  smfutils_save(recH, EditorMidi.name, &notelist);
+  DmReleaseRecord (openRef, recIndex, 1);
+  DmCloseDatabase (openRef);
   
-  // create in it database new (empty) record
-
-
-  // copy data in this record
-  MemMove (&EditorName[0], &name[0], sndMidiNameLength);
-  EditorCardNo = cardNo;
-  EditorDbID = dbID;
-  EditorUniqueRecID = uniqueRecID;
-
-#endif
-
-  // go to List form in last
-  FrmGotoForm (ID_MainForm);
+  FrmGotoForm(ID_MainForm);
 }
 
 static void 
@@ -181,8 +184,8 @@ Boolean EditorFormEventHandler (EventType * e)
 
     case frmCloseEvent:
       FormClose ();
-      return false;		/* return unhandled status for call default system handler (witch free form data). Accordin with standard sdk examples */
-
+      return false;		/* return unhandled status for call default system handler (witch free form data),
+				   accordin with standard sdk examples */
     case penDownEvent:
       return FormPenDownEvent(e);
 

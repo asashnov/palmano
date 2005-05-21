@@ -44,11 +44,10 @@ cb_midi_list_draw_item (Int16 itemNum,
 static void 
 New ()
 {
-  MemMove (EditorMidi.name, "Untitled", sndMidiNameLength);
+  MemMove(EditorMidi.name, "Untitled", sndMidiNameLength);
   EditorMidi.cardNo = 0;
   EditorMidi.dbID = 0;
   EditorMidi.uniqueRecID = 0;
-
   FrmGotoForm (ID_EditorForm);
 }
 
@@ -61,15 +60,12 @@ Play ()
     FrmAlert (ID_MidiNotSelAlert);
     return;
   }
-
   p = MemHandleLock (MidiListH);
   if (p == NULL) {
     ErrNonFatalDisplay ("Can't lock MidiListH");
     return;
   }
-
-  smfPlay(p+list_Selected);
-  
+  smfutils_play(p+list_Selected);
   MemHandleUnlock (MidiListH);
 }
 
@@ -83,21 +79,17 @@ Edit ()
     FrmAlert (ID_MidiNotSelAlert);
     return;
   }
-
   if((p = MemHandleLock (MidiListH)) == NULL) {
     ErrFatalDisplay ("Can't lock MidiListH");
     return;
   }
-
   MemMove (&EditorMidi.name[0], &p[list_Selected].name[0], sndMidiNameLength);
   EditorMidi.cardNo = p[list_Selected].cardNo;
   EditorMidi.dbID = p[list_Selected].dbID;
   EditorMidi.uniqueRecID = p[list_Selected].uniqueRecID;
-
   MemHandleUnlock (MidiListH);
   FrmGotoForm (ID_EditorForm);
 }
-
 
 static void 
 Copy ()
@@ -228,8 +220,10 @@ MainFormEventHandler (EventType * e)
 		break;
 	      case 5:		/* beam action */
 		Beam ();
+		break;
+	      default:
+		ErrDisplay("Bad action index selected!");
 	      }
-
 	    return true;
 	  }
 	}
@@ -248,16 +242,12 @@ MainFormEventHandler (EventType * e)
       ActionListSelected = e->data.popSelect.selection;	/* remember number of selected action in action list */
       return false;
 
-//    case keyDownEvent:
-//      struct _KeyDownEventType * k;
-//      k = (_KeyDownEventType *) data;
-//      switch (k->KeyCode)
-// do list scrolling
-
-      break;
-
-    default:
-      break;
+      //    case keyDownEvent:
+      // TODO: Hardware button for scrolling handle
+      //      struct _KeyDownEventType * k;
+      //      k = (_KeyDownEventType *) data;
+      //      switch (k->KeyCode)
+      // do list scrolling
     }
 
   return false;			/* FrmDispatchEvent now must call FrmHandleEvent*/

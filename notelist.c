@@ -23,8 +23,6 @@ notelist_append(NoteListPtr nl, const NotePtr newnote)
 {
   NoteType *notes;
   
-  debugPrintf("notelist_append(): entry: num of notes %d\n", nl->num);
-
   if (nl->bufH == NULL) {
     nl->bufH = MemHandleNew(sizeof(NoteType));
   } else if (MemHandleResize (nl->bufH, ((nl->num + 1) * sizeof(NoteType))) != 0) {
@@ -36,14 +34,10 @@ notelist_append(NoteListPtr nl, const NotePtr newnote)
     ErrDisplay("notelist_append(): can't lock bufH");
     return false;
   }
-  debugPrintf("notelist_append(): notes=%lx\n", notes);
-
   *(notes + nl->num) = *newnote;
   nl->selected = nl->num;   /* just appended note is selected automaticaly */
   nl->num++;
   MemPtrUnlock (notes);
-
-  debugPrintf("notelist_append(): exit: num of notes %d\n", nl->num);
   return true;
 }
 
@@ -64,8 +58,6 @@ notelist_draw (NoteListPtr nl)
   if (nl->num > 0)
     notes = (NoteType*) MemHandleLock(nl->bufH);
 
-  debugPrintf("notelist_draw: num of notes %d\n", nl->num);
-
   /* draw must carry for visibiliti of selected note */
   if (nl->selected != -1) {
     if (nl->selected < nl->firstDisplaying)
@@ -80,7 +72,6 @@ notelist_draw (NoteListPtr nl)
 
   i = nl->firstDisplaying;
   for (y = nl->rect.topLeft.y; y < max_y ; y += h, i++) {
-    debugPrintf("y=%d i=%d  num=%d\n", y, i, nl->num);
     if (i >= nl->num) {
       StrPrintF (buf, "                ");
     } else if (notes[i].note < 0) {

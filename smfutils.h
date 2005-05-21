@@ -4,8 +4,10 @@
 #include <PalmOS.h>
 #include "notelist.h"
 
-extern int smfLoad(SndMidiListItemType srcMidi, NoteListPtr dstList);
-extern int smfSave(SndMidiListItemType dstMidi, const NoteListPtr srcList);
-extern int smfPlay(SndMidiListItemType *midi);
+#define  pmnoCreatorDB   'pmno'
+
+extern void smfutils_load(MemHandle smfH, NoteListPtr dstList);
+extern int  smfutils_save(MemHandle smfH, const Char *name, const NoteListPtr srcList);
+extern int  smfutils_play(SndMidiListItemType *midi);
 
 #endif
