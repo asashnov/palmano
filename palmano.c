@@ -7,8 +7,6 @@
 #include "option_form.h"
 #include "utils.h"
 
-static UInt32 rom_version;
-
 void
 StopApplication (void)
 {
@@ -71,11 +69,19 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
 
   if (cmd == sysAppLaunchCmdNormalLaunch)
     {
-      if (FtrGet (sysFtrCreator, sysFtrNumROMVersion, &rom_version) != 0)
-	rom_version = 0;	/* Set to very low version if FtrGet failed.  */
+      {
+	UInt32 rom_version;
+	
+	if (FtrGet (sysFtrCreator, sysFtrNumROMVersion, &rom_version) != 0)
+	  rom_version = 0;	/* Set to very low version if FtrGet failed.  */
 
+	if (rom_version < 0x03000000)
+	  ErrFatalDisplay("Palm OS >= 3.0 required for this programm "
+			  "(custom system sound alert feature is needed).");
+      }
+      
       debugPrintf("Start logging\n");
-
+      
       FrmGotoForm (ID_MainForm);
 
       do
