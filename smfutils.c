@@ -22,23 +22,19 @@ const UInt8 MidiHeader[] = {
 const UInt32 MidiHeaderLength = 24;
 
 static MemHandle
-smf_StartSMF (MemHandle bufH)
+smf_StartSMF ()
 {
-  Err err;
-  UInt8 *bufP;
+  UInt8 *buf;
+  MemHandle bufH;
 
-  if ((err = MemHandleResize(bufH, MidiHeaderLength)) != 0) {
-    ErrFatalDisplay("smf_StartSMF: can't resize buffer");
+  bufH = MemHandleNew(MidiHeaderLength);
+	
+  if (bufH) {
+    buf = MemHandleLock(bufH);
+    MemMove(buf, (void *) MidiHeader, MidiHeaderLength);
+    MemHandleUnlock(bufH);
   }
-
-  if ((bufP = MemHandleLock(bufH)) == NULL) {
-    ErrFatalDisplay("Can't lock bufH handle");
-  }
-
-  MemMove (bufP, (void *) MidiHeader, MidiHeaderLength);
-  MemHandleUnlock (bufH);
-  debugPrintf("smf_StartSMF(): exit OK");
-
+	
   return bufH;
 }
 
@@ -47,27 +43,26 @@ smf_AppendNote (MemHandle bufH, int note, int dur, int vel, int pause)
 {
   UInt8 *buf;
   UInt32 bufsize, neededSize;
-  int pos;			// , startpos;
-
-  if (!bufH)
-    return 0;			// make error-handling easy for our caller
-
+  int pos; // , startpos;
+	
+  if (!bufH) return 0;		// make error-handling easy for our caller
+	
   // how big is our buffer?
-  bufsize = MemHandleSize (bufH);
-  buf = MemHandleLock (bufH);
-  pos = (*((UInt32 *) (&buf[18]))) + MidiHeaderLength - 2;	// position of next spot to put data
-  MemHandleUnlock (bufH);
-
+  bufsize = MemHandleSize(bufH);
+  buf = MemHandleLock(bufH);
+  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2;	// position of next spot to put data
+  MemHandleUnlock(bufH);
+	
   // allocate more memory if necessary
-  neededSize = 9 + pos;		// 9 is maximum number of bytes we'd use in here
+  neededSize = 9 + pos; // 9 is maximum number of bytes we'd use in here
   if (bufsize < neededSize)
-    if (MemHandleResize (bufH, neededSize))
+    if (MemHandleResize(bufH, neededSize))
       return 0;
-
-  buf = MemHandleLock (bufH);
-
+	
+  buf = MemHandleLock(bufH);
+	
   // start the note
-  buf[pos++] = note;		// frequency
+  buf[pos++] = note;	// frequency
   if (vel >= 128)		// velocity i.e. volume
     buf[pos++] = 0x80 + ((vel & 0x0780) >> 7);
   buf[pos++] = (vel & 0x07f);
@@ -85,11 +80,11 @@ smf_AppendNote (MemHandle bufH, int note, int dur, int vel, int pause)
   if (pause >= 128)
     buf[pos++] = 0x80 + ((pause & 0x7f80) >> 7);
   buf[pos++] = (pause & 0x07f);
-
+	
   // update header to show how much data is there
-  *((UInt32 *) (&buf[18])) = pos - (MidiHeaderLength - 2);
+  *((UInt32 *)(&buf[18])) = pos - (MidiHeaderLength -2);
 
-  MemHandleUnlock (bufH);
+  MemHandleUnlock(bufH);
   return bufH;
 }
 
@@ -100,22 +95,21 @@ smf_FinishSMF (MemHandle bufH)
   UInt32 bufsize, neededSize;
   int pos;
 
-  if (!bufH)
-    return 0;			// make error-handling easy for our caller
+  if (!bufH) return 0;		// make error-handling easy for our caller
 
   // how big is our buffer?
-  bufsize = MemHandleSize (bufH);
-  buf = MemHandleLock (bufH);
-  pos = (*((UInt32 *) (&buf[18]))) + MidiHeaderLength - 2;	// position of next spot to put data
-  MemHandleUnlock (bufH);
-
+  bufsize = MemHandleSize(bufH);
+  buf = MemHandleLock(bufH);
+  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2;	// position of next spot to put data
+  MemHandleUnlock(bufH);
+	
   // allocate more memory if necessary
-  neededSize = 3 + pos;		// 3 more bytes to terminate things
+  neededSize = 3 + pos; // 3 more bytes to terminate things
   if (bufsize < neededSize)
-    if (MemHandleResize (bufH, neededSize))
+    if (MemHandleResize(bufH, neededSize))
       return 0;
-
-  buf = MemHandleLock (bufH);
+	
+  buf = MemHandleLock(bufH);
 
   // now stop everything
   buf[pos++] = 0xff;
@@ -123,9 +117,9 @@ smf_FinishSMF (MemHandle bufH)
   buf[pos++] = 0x00;
 
   // update header to show how much data is there
-  *((UInt32 *) (&buf[18])) = pos - (MidiHeaderLength - 2);
+  *((UInt32 *)(&buf[18])) = pos - (MidiHeaderLength -2);
 
-  MemHandleUnlock (bufH);
+  MemHandleUnlock(bufH);
   return bufH;
 }
 
@@ -225,19 +219,24 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   UInt8  MidiOffset;
   UInt32 SmfSize;
   SndMidiRecHdrType recHdr;
+  MemHandle smfH;
+  UInt8*    smfP;
   NoteType *notes;
   Int16 i;
 
   /* generate SMF from NoteList */
-  recH = smf_StartSMF(recH);
+  smfH = smf_StartSMF();
+  debugPrintf("smfutils_save(): smfH started, now is %lx\n", smfH);
   notes = MemHandleLock(srcList->bufH);
   for (i = 0; i < srcList->num; i++)
-      smf_AppendNote (recH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
-  MemPtrUnlock(notes);
-  smf_FinishSMF (recH);
+      smf_AppendNote(smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
+  debugPrintf("Notes added\n");
+  MemHandleUnlock(srcList->bufH);
+  smf_FinishSMF(smfH);
+
+  debugPrintf("smfutils_save(): note list written to handle, now handle is %lx\n", smfH);
 
   /* save SMF */
-  /* Now recH contains only MIDI record, need add Palm OS header before that */
   MidiOffset = sizeof(SndMidiRecHdrType) + StrLen(midiname) + 1;
   SmfSize = MemHandleSize(recH); /* size of all MIDI section (without PalmOS header) */
   recHdr.signature = sndMidiRecSignature;
@@ -245,25 +244,23 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   recHdr.bDataOffset = MidiOffset;
 
   /* resize record in DB for insert PalmOS header */
-  if (!MemHandleResize(recH, MidiOffset + SmfSize))
+  if (MemHandleResize(recH, MidiOffset + SmfSize))
     ErrFatalDisplay("Can't resize handle");
 
   /* Lock down the source SMF and target record and copy the data */
   recP = MemHandleLock(recH);
+  smfP = MemHandleLock(smfH);
 
-  /* move MIDI data up (for insert PalmOS header */
-  if(!MemMove(recP + MidiOffset, recP, SmfSize))
-    ErrFatalDisplay("Can't move data for insert Palm Midi header in DB");
+  err = DmWrite(recP, 0, &recHdr, sizeof(recHdr));
+  if (!err) err = DmStrCopy(recP, prvFieldOffset(SndMidiRecType, name), midiname);
+  if (!err) err = DmWrite(recP, MidiOffset, smfP, SmfSize);
 
-  err = DmWrite (recP, 0 /* offset */, &recHdr, sizeof (recHdr));
-  if (!err)
-    err = DmStrCopy (recP, prvFieldOffset(SndMidiRecType, name) /* offset of field name */, midiname);
- 
-  /* don't need to save, already in place */
-  // if (!err)
-  //  err = DmWrite (recP, MidiOffset, recP, dwSmfSize);
+  if(err) {
+    ErrAlert(err);
+  }
 
-  MemHandleUnlock (recH);
+  MemHandleUnlock(smfH);
+  MemHandleUnlock(recH);
   return err;
 }
 
