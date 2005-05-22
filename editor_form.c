@@ -98,18 +98,52 @@ DropButtonClick (void)
   FrmGotoForm (ID_MainForm);
 }
 
-/** Returns reference to opened Palmano database, create it if not exit */
-static DmOpenRef
-getPalmanoDB()
+
+/* DESCRIPTION:  Get the application's database.  Open the database if it
+ * exists, create it if neccessary.
+ *
+ * PARAMETERS:   *dbPP - pointer to a database ref (DmOpenRef) to be set
+ *					  mode - how to open the database (dmModeReadWrite)
+ *
+ * RETURNED:     Err - zero if no error, else the error
+ */
+static Err getPalmanoDatabase (DmOpenRef *dbPP, UInt16 mode)
 {
+  Err error = 0;
   DmOpenRef dbP;
 
-
-  dbP = DmOpenDatabaseByTypeCreator(sysFileTMidi, sysFileCSystem, dmModeReadWrite | dmModeExclusive);
-  if (!dbP)
-    ErrFatalDisplay("Can't open system MIDI database!");
+  *dbPP = NULL;
   
-  return dbP;
+  // Find the application's data file.  If it doesn't exist create it.
+  dbP = DmOpenDatabaseByTypeCreator (sysFileTMidi, pmnoCreatorDB, mode);
+  if (!dbP) {
+    debugPrintf("getPalmanoDatabase(): Can't open database, code %d\n", DmGetLastErr());
+    error = DmCreateDatabase (0, "palmano", pmnoCreatorDB, sysFileTMidi, false);
+    if (error) {
+      debugPrintf("getPalmanoDatabase(): DmCreateDatabase exit code %d\n", error);
+      ErrAlert(error);
+      return error;
+    } else
+      debugPrintf("getPalmanoDatabase(): create DB ok\n");
+
+    dbP = DmOpenDatabaseByTypeCreator(sysFileTMidi, pmnoCreatorDB, mode);
+    if (!dbP) {
+      debugPrintf("getPalmanoDatabase(): Can't open database after create, code %d\n", DmGetLastErr());
+      ErrAlert(DmGetLastErr());      
+      return DmGetLastErr();
+    } else
+      debugPrintf("getPalmanoDatabase(): second open DB ok\n");
+
+
+    // Set the backup bit.  This is to aid syncs with non Palm software.
+    //    ToDoSetDBBackupBit(dbP);
+		
+  } else
+    debugPrintf("getPalmanoDatabase(): open DB ok\n");
+
+
+  *dbPP = dbP;
+  return 0;
 }
 
 
@@ -121,30 +155,42 @@ SaveButtonClick (void)
   MemHandle recH;
 
   if (EditorMidi.dbID == 0) {
-    debugPrintf("SaveButtonClick(): new midi create required.\n");
+    Err err;
 
-    /* New song- create new record in DB */
-    openRef = getPalmanoDB();
-    debugPrintf("SaveButtonClick(): getPalmanoDB returns %x\n", openRef);
-    ErrFatalDisplayIf(openRef == 0, "Can't open System MIDI Sounds database");
+// debugPrintf("SaveButtonClick(): new midi create required.\n");
 
+    err = getPalmanoDatabase(&openRef, dmModeReadWrite | dmModeExclusive);
+    if (err != 0) {
+      ErrAlert(err);
+      return;
+    }
+
+// debugPrintf("SaveButtonClick(): openDB handle is %lx\n", openRef);
+
+    /* allocate new record in DB */
     recIndex = dmMaxRecordIndex;
     recH = DmNewRecord(openRef, &recIndex, 5); /* initial size is 5 bytes */
     if (recH == 0) {
       Err err = DmGetLastErr();
       ErrAlert(err);
-      ErrFatalDisplay("Can't create new record in palmano DB");
-    }
+      ErrFatalDisplay("SaveButtonClick(): Can't create new record in palmano DB");
+    } else
+      debugPrintf("SaveButtonClick(): new record with index %u is created\n", recIndex);
+    //    recH = DmGetRecord(openRef, recIndex);
+    // debugPrintf("SaveButtonClick(): new record handle by DmGetRecord is %lx\n", recH);
   } else {
     /* replace old song in-place */
     openRef = DmOpenDatabase (EditorMidi.cardNo, EditorMidi.dbID, dmModeReadWrite | dmModeExclusive);
-    ErrFatalDisplayIf(!openRef, "Can't open old song database for record");
+    ErrFatalDisplayIf(!openRef, "SaveButtonClick(): Can't open old song database for record");
     recIndex = EditorMidi.uniqueRecID;
     recH = DmGetRecord(openRef, recIndex);
-    ErrFatalDisplayIf(!recH, "Can't get old song record for writing");
+    ErrFatalDisplayIf(!recH, "SaveButtonClick(): Can't get old song record for writing");
   }
-    
+
+  debugPrintf("SaveButtonClick(): call smfutils_save for save notelist to handle %lx\n", recH);
   smfutils_save(recH, EditorMidi.name, &notelist);
+  debugPrintf("SaveButtonClick(): return from smfutils_save()\n");
+
   DmReleaseRecord (openRef, recIndex, 1);
   DmCloseDatabase (openRef);
   
