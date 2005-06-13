@@ -197,10 +197,12 @@ SaveButtonClick (void)
 static void 
 NoteButtonPressed (Int16 note)
 {
-  NoteType n = 
-    { note, 100, 40, 20 };
+  NoteType n = {note, 100, 40, 20};
   debugPrintf("NoteButtonPressed(): note %d is pressed\n", note);
-  notelist_append(&notelist, &n);
+  if (notelist.selected == -1)
+    notelist_append(&notelist, &n);
+  else
+    notelist_updateSelected(&notelist, &n);
   notelist_draw(&notelist);
   PlayNote (&n);
 }
