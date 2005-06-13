@@ -7,15 +7,25 @@
 
 static MemHandle MidiListH = NULL;
 static UInt16 NumMidi;
-static Int16 list_Selected = -1;
+static Int16 selected_song = -1;
 
-#if 0
+/*
 static Char * tips[] = {
   "You can setup volume for playing in Pref  application, sound volume for games",
   "You may put license key to memo in Unified category with title Palmano serial",
   NULL
 };
-#endif
+*/
+
+static void Open();
+static void Play();
+static void Copy();
+static void Delete();
+static void Info();
+static void Beam();
+
+typedef void (*action_t)(void);
+static action_t actions[] = { Open, Play, Copy, Delete, Info, Beam };
 
 /* draw one midi name in the list */
 static void
@@ -56,37 +66,29 @@ Play ()
 {
   SndMidiListItemType *p;
 
-  if (list_Selected < 0) {
-    FrmAlert (ID_MidiNotSelAlert);
-    return;
-  }
   p = MemHandleLock (MidiListH);
   if (p == NULL) {
     ErrNonFatalDisplay ("Can't lock MidiListH");
     return;
   }
-  smfutils_play(p+list_Selected);
+  smfutils_play(p + selected_song);
   MemHandleUnlock (MidiListH);
 }
 
 
 static void 
-Edit ()
+Open ()   /* TODO: Open(midi), get pointer in main function. */
 {
   SndMidiListItemType *p;
 
-  if (list_Selected < 0) {
-    FrmAlert (ID_MidiNotSelAlert);
-    return;
-  }
   if((p = MemHandleLock (MidiListH)) == NULL) {
     ErrFatalDisplay ("Can't lock MidiListH");
     return;
   }
-  MemMove (&EditorMidi.name[0], &p[list_Selected].name[0], sndMidiNameLength);
-  EditorMidi.cardNo = p[list_Selected].cardNo;
-  EditorMidi.dbID = p[list_Selected].dbID;
-  EditorMidi.uniqueRecID = p[list_Selected].uniqueRecID;
+  MemMove (&EditorMidi.name[0], &p[selected_song].name[0], sndMidiNameLength);
+  EditorMidi.cardNo = p[selected_song].cardNo;
+  EditorMidi.dbID = p[selected_song].dbID;
+  EditorMidi.uniqueRecID = p[selected_song].uniqueRecID;
   MemHandleUnlock (MidiListH);
   FrmGotoForm (ID_EditorForm);
 }
@@ -94,12 +96,6 @@ Edit ()
 static void 
 Copy ()
 {
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
-
   FrmAlert (ID_NotImplAlert);
 }
 
@@ -107,12 +103,6 @@ Copy ()
 static void 
 Delete ()
 {
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
-
   FrmAlert (ID_NotImplAlert);
 }
 
@@ -120,12 +110,6 @@ Delete ()
 static void 
 Info ()
 {
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
-
   FrmAlert (ID_NotImplAlert);
 }
 
@@ -133,12 +117,6 @@ Info ()
 static void
 Beam ()
 {
-  if (list_Selected < 0)
-    {
-      FrmAlert (ID_MidiNotSelAlert);
-      return;
-    }
-
   FrmAlert (ID_NotImplAlert);
 }
 
@@ -174,16 +152,16 @@ MainFormClose (void)
     MemHandleFree (MidiListH);
     MidiListH = NULL;
   }
-  list_Selected = -1;
+  selected_song = -1;
   NumMidi = 0;
 }
+
 
 
 Boolean
 MainFormEventHandler (EventType * e)
 {
-  //  FormType *form = FrmGetActiveForm ();
-  static UInt16 ActionListSelected = 0; /* Open action selected by default */
+  static UInt16 selected_action = 0; /* by default Open() action */
 
   switch (e->eType)
     {
@@ -196,39 +174,18 @@ MainFormEventHandler (EventType * e)
       return false;
 
     case lstSelectEvent:
-      switch (e->data.ctlSelect.controlID)
-	{
-	case ID_MainSongList:	/* select song in midi list */
-	  {
-	    list_Selected = e->data.lstSelect.selection;
-	    switch (ActionListSelected)	/* action whis selected midi */
-	      {
-	      case 0:		/* open action */
-		Edit ();
-		break;
-	      case 1:		/* play action */
-		Play ();
-		break;
-	      case 2:		/* copy action */
-		Copy ();
-		break;
-	      case 3:		/* delete action */
-		Delete ();
-		break;
-	      case 4:		/* info action */
-		Info ();
-		break;
-	      case 5:		/* beam action */
-		Beam ();
-		break;
-	      default:
-		ErrDisplay("Bad action index selected!");
-	      }
-	    return true;
-	  }
-	}
-      break;
-
+      selected_song = e->data.lstSelect.selection;
+      if (selected_action < 0 || selected_action > 5) {
+	ErrDisplay("Bad action index selected!");
+	return false;
+      }
+      if (selected_song < 0) {
+	FrmAlert (ID_MidiNotSelAlert);
+	return false;
+      }
+      actions[selected_action]();      
+      return true;
+      
     case ctlSelectEvent:
       switch (e->data.ctlSelect.controlID)
 	{
@@ -239,7 +196,7 @@ MainFormEventHandler (EventType * e)
       break;
 
     case popSelectEvent:
-      ActionListSelected = e->data.popSelect.selection;	/* remember number of selected action in action list */
+      selected_action = e->data.popSelect.selection;
       return false;
 
       //    case keyDownEvent:
