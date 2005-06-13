@@ -201,8 +201,11 @@ NoteButtonPressed (Int16 note)
   debugPrintf("NoteButtonPressed(): note %d is pressed\n", note);
   if (notelist.selected == -1)
     notelist_append(&notelist, &n);
-  else
+  else {
     notelist_updateSelected(&notelist, &n);
+    if (++nl->selected >= nl->num)
+      nl->selected = -1;
+  }
   notelist_draw(&notelist);
   PlayNote (&n);
 }
