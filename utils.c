@@ -84,6 +84,21 @@ SetFieldTextFromStr (UInt16 fieldID, Char * strP)
   return SetFieldTextFromHandle (fieldID, txtH);
 }
 
+void GetFieldTextToStr (char *to, const UInt16 fieldId, int max)
+{
+  FieldPtr fldP = GetObjectFromActiveForm(fieldId);
+  Char *s = FldGetTextPtr(fldP);
+  if (s == NULL)		/* field is empty */
+    to[0] = '\0';
+  else {
+    if(StrLen(s) > max)
+      ErrDisplay("String to long!");
+    else
+      StrCopy(to,s);
+    MemPtrUnlock(s);
+  }
+}
+
 void
 PlayNote (const NoteType *n)
 {

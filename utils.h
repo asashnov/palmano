@@ -18,6 +18,8 @@ extern FieldPtr SetFieldTextFromHandle (UInt16 fieldID, MemHandle txtH);
 /* Allocates new handle and copies incoming string */
 extern FieldPtr SetFieldTextFromStr (UInt16 fieldID, Char *strP);
 
+void GetFieldTextToStr(char *to, const UInt16 fieldId, int max);
+
 extern void PlayNote (const NoteType *n);
 
 #endif
