@@ -157,15 +157,11 @@ SaveButtonClick (void)
   if (EditorMidi.dbID == 0) {
     Err err;
 
-// debugPrintf("SaveButtonClick(): new midi create required.\n");
-
     err = getPalmanoDatabase(&openRef, dmModeReadWrite | dmModeExclusive);
     if (err != 0) {
       ErrAlert(err);
       return;
     }
-
-// debugPrintf("SaveButtonClick(): openDB handle is %lx\n", openRef);
 
     /* allocate new record in DB */
     recIndex = dmMaxRecordIndex;
@@ -188,6 +184,7 @@ SaveButtonClick (void)
   }
 
   debugPrintf("SaveButtonClick(): call smfutils_save for save notelist to handle %lx\n", recH);
+  GetFieldTextToStr(EditorMidi.name, ID_EditorNameField, sndMidiNameLength);
   smfutils_save(recH, EditorMidi.name, &notelist);
   debugPrintf("SaveButtonClick(): return from smfutils_save()\n");
 
