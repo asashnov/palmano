@@ -203,8 +203,8 @@ NoteButtonPressed (Int16 note)
     notelist_append(&notelist, &n);
   else {
     notelist_updateSelected(&notelist, &n);
-    if (++nl->selected >= nl->num)
-      nl->selected = -1;
+    if (++notelist.selected >= notelist.num)
+      notelist.selected = -1;
   }
   notelist_draw(&notelist);
   PlayNote (&n);
