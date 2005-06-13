@@ -2,8 +2,8 @@
 
 VERSION "0.5"
 
-/* Main form and menu */
 
+/*------ Main form and menu ------*/
 FORM ID ID_MainForm AT(0 0 160 160)
 MENUID ID_MainMenu
 BEGIN
@@ -26,17 +26,14 @@ BEGIN
 END
 
 
-/* Editor form */
-
+/*------ Editor form ------*/
 FORM ID ID_EditorForm AT (0 0 160 160)
 BEGIN
-/*  TITLE "Editor"  */
-
+  /* TITLE "Editor" */
   GRAFFITISTATEINDICATOR AT (149 0)
   FIELD ID ID_EditorNameField AT (2 PrevTop 160 AUTO) USABLE LEFTALIGN EDITABLE UNDERLINED SINGLELINE MAXCHARS 31 AUTOSHIFT
-
-  GADGET ID ID_EditorNoteListGadget AT (0 PrevBottom+2 67 79) USABLE
-
+  GADGET    ID ID_EditorNoteListGadget AT (0 PrevBottom+2 67 79) USABLE
+  SCROLLBAR ID ID_EditorNoteScrollBar  AT (PrevTop PrevRight AUTO PrevHeight) USABLE VALUE 0 MIN 0
   /* Control buttons */
 /*   PUSHBUTTON "<<" ID ID_EditorBegin AT (93 120 AUTO AUTO) */
 /*   PUSHBUTTON ">"  ID ID_EditorPlay  AT (PrevRight+1 PrevTop AUTO PrevHeight) */

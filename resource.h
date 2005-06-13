@@ -23,6 +23,7 @@
 #define ID_EditorDurationList      2006
 #define ID_EditorMidiKeysGadget    2007
 #define ID_EditorNoteListGadget    2008
+#define ID_EditorNoteScrollBar     2009
 
 #define ID_EditorBegin             2120
 #define ID_EditorPlay              2121
