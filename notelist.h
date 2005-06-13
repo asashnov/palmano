@@ -23,6 +23,7 @@ typedef NoteListType * NoteListPtr;
 extern void notelist_init(NoteListPtr nl, FormGadgetType *gadget);
 extern void notelist_clear(NoteListPtr nl);
 extern int  notelist_append(NoteListPtr nl, const NotePtr note);
+extern int  notelist_updateSelected(NoteListPtr nl, const NotePtr note);
 extern void notelist_draw(NoteListPtr nl);
 extern void notelist_tapped(NoteListPtr nl, Int16 tap_x, Int16 tap_y);
 extern void notelist_free(NoteListPtr nl);

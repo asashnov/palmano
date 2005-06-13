@@ -41,6 +41,18 @@ notelist_append(NoteListPtr nl, const NotePtr newnote)
   return true;
 }
 
+int notelist_updateSelected(NoteListPtr nl, const NotePtr note)
+{
+  NoteType *notes = (NoteType*) MemHandleLock(nl->bufH);
+  if (notes == NULL) {
+    ErrDisplay("notelist_updateSelected(): can't lock bufH");
+    return false;
+  }
+  *(notes + nl->selected) = *note;  
+  MemPtrUnlock (notes);
+  return true;
+}
+
 void
 notelist_draw (NoteListPtr nl)
 {
@@ -94,8 +106,13 @@ notelist_draw (NoteListPtr nl)
 void
 notelist_tapped(NoteListPtr nl, Int16 tap_x, Int16 tap_y)
 {
+  Int16 select;
   int h = FntCharHeight();
-  nl->selected = (tap_y - nl->rect.topLeft.y) / h + nl->firstDisplaying;
+  select = (tap_y - nl->rect.topLeft.y) / h + nl->firstDisplaying;
+  if (select == nl->selected)
+    nl->selected = -1;		/* unselect */
+  else
+    nl->selected = select;
   notelist_draw(nl);
 }
 
