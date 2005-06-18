@@ -8,17 +8,19 @@ typedef struct Note
   Int16 vel;
   Int16 pause;
 } NoteType;
-typedef struct Note * NotePtr;
 
 typedef struct NoteList
 {
+  Int16     num;
   MemHandle bufH;
-  UInt16    num;
+
   RectangleType rect;
   Int16     firstDisplaying;
   Int16     selected;
 } NoteListType;
+
 typedef NoteListType * NoteListPtr;
+typedef struct Note * NotePtr;
 
 extern void notelist_init(NoteListPtr nl, FormGadgetType *gadget);
 extern void notelist_clear(NoteListPtr nl);
