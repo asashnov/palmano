@@ -198,7 +198,13 @@ static void
 NoteButtonPressed (Int16 note)
 {
   NoteType n = {note, 100, 40, 20};
-  debugPrintf("NoteButtonPressed(): note %d is pressed\n", note);
+  static Int16 pageSize = -1;
+  Int16 scroll_max;
+  Int16 scroll_pos;
+
+  if (pageSize == -1)
+    pageSize = notelist.rect.extent.y/FntCharHeight() - 1;
+
   if (notelist.selected == -1)
     notelist_append(&notelist, &n);
   else {
@@ -207,6 +213,16 @@ NoteButtonPressed (Int16 note)
       notelist.selected = -1;
   }
   notelist_draw(&notelist);
+
+  if (notelist.num > pageSize)
+    scroll_max = notelist.num - pageSize;
+  else if (notelist.firstDisplaying)
+    scroll_max = notelist.firstDisplaying;
+  else
+    scroll_max = 0;
+
+  SclSetScrollBar (GetObjectFromActiveForm(ID_EditorNoteScrollBar),
+		   scroll_pos, 0 /*min*/, scroll_max, pageSize);
   PlayNote (&n);
 }
 
