@@ -63,10 +63,11 @@ notelist_draw (NoteListPtr nl)
   int h = FntCharHeight();
   NoteType *notes = NULL;
   char buf[30];
-  int x = nl->rect.topLeft.x;
-  int y, max_y = nl->rect.topLeft.y + nl->rect.extent.y;
   int i;
-  
+  int x = nl->rect.topLeft.x;
+  int y = nl->rect.topLeft.y;
+  int max_y = nl->rect.topLeft.y + nl->rect.extent.y - h;
+
   if (nl->num > 0)
     notes = (NoteType*) MemHandleLock(nl->bufH);
 
@@ -83,7 +84,7 @@ notelist_draw (NoteListPtr nl)
   }
 
   i = nl->firstDisplaying;
-  for (y = nl->rect.topLeft.y; y < max_y ; y += h, i++) {
+  while (y < max_y) {
     if (i >= nl->num) {
       StrPrintF (buf, "                ");
     } else if (notes[i].note < 0) {
@@ -94,10 +95,10 @@ notelist_draw (NoteListPtr nl)
 		 notes[i].note / 12, /* octave */
 		 notes[i].dur, notes[i].vel, notes[i].pause);
     }
-    /* paint result in any way */
     if(i == nl->selected)
       buf[0] = '>';
-    WinPaintChars(buf, StrLen (buf), x, y);	
+    WinPaintChars(buf, StrLen(buf), x, y);
+    y += h, i++;
   }
   if (notes != NULL)
     MemPtrUnlock (notes);
