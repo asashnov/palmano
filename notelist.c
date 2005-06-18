@@ -110,6 +110,8 @@ notelist_tapped(NoteListPtr nl, Int16 tap_x, Int16 tap_y)
   Int16 select;
   int h = FntCharHeight();
   select = (tap_y - nl->rect.topLeft.y) / h + nl->firstDisplaying;
+  if (select >= nl->num)
+    return;
   if (select == nl->selected)
     nl->selected = -1;		/* unselect */
   else
