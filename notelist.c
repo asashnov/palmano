@@ -35,7 +35,7 @@ notelist_append(NoteListPtr nl, const NotePtr newnote)
     return false;
   }
   *(notes + nl->num) = *newnote;
-  nl->selected = nl->num;   /* just appended note is selected automaticaly */
+  //nl->selected = nl->num;   /* just appended note is selected automaticaly */
   nl->num++;
   MemPtrUnlock (notes);
   return true;
@@ -96,7 +96,7 @@ notelist_draw (NoteListPtr nl)
     }
     /* paint result in any way */
     if(i == nl->selected)
-      buf[0] = '*';
+      buf[0] = '>';
     WinPaintChars(buf, StrLen (buf), x, y);	
   }
   if (notes != NULL)
