@@ -33,7 +33,7 @@ BEGIN
   GRAFFITISTATEINDICATOR AT (149 0)
   FIELD ID ID_EditorNameField AT (2 PrevTop 160 AUTO) USABLE LEFTALIGN EDITABLE UNDERLINED SINGLELINE MAXCHARS 31 AUTOSHIFT
   GADGET    ID ID_EditorNoteListGadget AT (0 PrevBottom+2 67 79) USABLE
-  SCROLLBAR ID ID_EditorNoteScrollBar  AT (PrevTop PrevRight AUTO PrevHeight) USABLE VALUE 0 MIN 0
+  SCROLLBAR ID ID_EditorNoteScrollBar  AT (PrevRight+1 PrevTop 7 PrevHeight) VALUE 0 MIN 0 MAX 25 PAGESIZE 3
   /* Control buttons */
 /*   PUSHBUTTON "<<" ID ID_EditorBegin AT (93 120 AUTO AUTO) */
 /*   PUSHBUTTON ">"  ID ID_EditorPlay  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
