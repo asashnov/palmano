@@ -16,6 +16,7 @@ notelist_clear(NoteListPtr nl)
   notelist_free(nl);
   nl->firstDisplaying = 0;
   nl->selected = -1;
+  nl->tempo = 0x0190;		/* standard default value (from sdk3.5 rockmusic sample) */
 }
 
 int

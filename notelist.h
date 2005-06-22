@@ -13,7 +13,7 @@ typedef struct NoteList
 {
   Int16     num;
   MemHandle bufH;
-  Uint16    tempo;  		/* song tempo */
+  UInt16    tempo;  		/* song tempo */
 
   RectangleType rect;
   Int16     firstDisplaying;
