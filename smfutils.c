@@ -8,8 +8,8 @@
 const UInt8 MidiHeader[] = {
   0x4D, 0x54, 0x68, 0x64,	// MThd
   0x00, 0x00, 0x00, 0x06,	// header data is 6 bytes long
-  0x00, 0x00, 0x00, 0x01, 0x01, 0x90,	// format 0, 1 track, 0190 tempo (microseconds per quarter note)
-
+  0x00, 0x00, 0x00, 0x01,       // format 0, 1 track,
+  0x01, 0x90,	                // 0190 tempo (microseconds per quarter note)
   0x4D, 0x54, 0x72, 0x6B,	// MTrk
   0x00, 0x00, 0x00, 0x02,	// length in bytes of following data
   0x00, 0x90			// start playing a sound...
@@ -22,20 +22,21 @@ const UInt8 MidiHeader[] = {
 const UInt32 MidiHeaderLength = 24;
 
 static MemHandle
-smf_StartSMF ()
+smf_StartSMF (const NoteListType *nl)
 {
-  UInt8 *buf;
-  MemHandle bufH;
+  MemHandle retH;
 
-  bufH = MemHandleNew(MidiHeaderLength);
+  retH = MemHandleNew(MidiHeaderLength);
 	
-  if (bufH) {
-    buf = MemHandleLock(bufH);
+  if (retH) {
+    UInt8 *buf = MemHandleLock(retH);
     MemMove(buf, (void *) MidiHeader, MidiHeaderLength);
-    MemHandleUnlock(bufH);
-  }
-	
-  return bufH;
+    *((UInt16*)&MidiHeader[12]) = nl->tempo;
+    MemHandleUnlock(retH);
+  } else
+    ErrDisplay ("Can't alloc midi header");
+
+  return retH;
 }
 
 static MemHandle
@@ -95,12 +96,12 @@ smf_FinishSMF (MemHandle bufH)
   UInt32 bufsize, neededSize;
   int pos;
 
-  if (!bufH) return 0;		// make error-handling easy for our caller
+  if (!bufH) return 0; // make error-handling easy for our caller
 
   // how big is our buffer?
   bufsize = MemHandleSize(bufH);
   buf = MemHandleLock(bufH);
-  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2;	// position of next spot to put data
+  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2; // position of next spot to put data
   MemHandleUnlock(bufH);
 	
   // allocate more memory if necessary
@@ -155,13 +156,14 @@ smf_isEndOfNoteData (MemPtr smf_stream)
   return true;
 }
 
-
+/* Read one note from stream.
+ * Return value: pointer to next note in stream.
+ */
 static MemPtr 
 smf_ReadNote (MemPtr smf_stream, NoteType * n)
 {
-  UInt8 *p;
+  UInt8 *p = smf_stream;
 
-  p = smf_stream;
   n->note = *p++;
 
   if (*p >= 0x80)
@@ -201,6 +203,8 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
   midiHdrP = MemHandleLock (midiH);
   midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
 
+  dstList->tempo = *((UInt16*)midiStreamP+12);
+
   if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
     notelist_clear(dstList);
     while (!smf_isEndOfNoteData(p)) {
@@ -219,7 +223,7 @@ MemHandle smfutils_create(const NoteListPtr srcList)
   NoteType *notes;
   Int16 i;
 
-  smfH = smf_StartSMF();
+  smfH = smf_StartSMF(srcList);
   debugPrintf("smfutils_save(): smfH started, now is %lx\n", smfH);
   notes = MemHandleLock(srcList->bufH);
   for (i = 0; i < srcList->num; i++)
