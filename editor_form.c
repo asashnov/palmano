@@ -11,6 +11,25 @@ SndMidiListItemType EditorMidi;	/* current song */
 static NoteListType notelist;
 static MidiKeysType midikeys;
 
+typedef enum {SCL_BEGIN, SCL_END } scl_seek_t;
+
+static void
+SeekScrollBar(scl_seek_t to)
+{
+  static Int16 pageSize = -1;
+  Int16 scroll_max;
+
+  if (pageSize == -1)
+    pageSize = notelist.rect.extent.y/FntCharHeight();
+
+  scroll_max = (notelist.num > pageSize)? notelist.num - pageSize : 0;
+
+  notelist.firstDisplaying = (to == SCL_BEGIN)? 0 : scroll_max;
+
+  SclSetScrollBar (GetObjectFromActiveForm(ID_EditorNoteScrollBar),
+		   notelist.firstDisplaying /*pos*/, 0 /*min*/, scroll_max, pageSize);
+}
+
 static void 
 FormUpdate()
 {
@@ -61,6 +80,8 @@ FormOpen (void)
 
   if (EditorMidi.dbID != 0)
    LoadSMF(EditorMidi, &notelist);
+  
+  SeekScrollBar(SCL_BEGIN);
 
   FormUpdate();
 }
@@ -198,13 +219,8 @@ static void
 NoteButtonPressed (Int16 note)
 {
   NoteType n = {note, 100, 40, 20};
-  static Int16 pageSize = -1;
-  Int16 scroll_max;
-  Int16 scroll_pos;
 
-  if (pageSize == -1)
-    pageSize = notelist.rect.extent.y/FntCharHeight() - 1;
-
+  /* replace (selected) or append (to end) note */
   if (notelist.selected == -1)
     notelist_append(&notelist, &n);
   else {
@@ -212,17 +228,9 @@ NoteButtonPressed (Int16 note)
     if (++notelist.selected >= notelist.num)
       notelist.selected = -1;
   }
+
+  SeekScrollBar(SCL_END);
   notelist_draw(&notelist);
-
-  if (notelist.num > pageSize)
-    scroll_max = notelist.num - pageSize;
-  else if (notelist.firstDisplaying)
-    scroll_max = notelist.firstDisplaying;
-  else
-    scroll_max = 0;
-
-  SclSetScrollBar (GetObjectFromActiveForm(ID_EditorNoteScrollBar),
-		   scroll_pos, 0 /*min*/, scroll_max, pageSize);
   PlayNote (&n);
 }
 
