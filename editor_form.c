@@ -239,6 +239,7 @@ ScrollbarEvent(struct sclRepeat *data)
 {
   if(data->scrollBarID == ID_EditorNoteScrollBar) {
     notelist.firstDisplaying = data->newValue;
+    notelist.selected = -1;
     notelist_draw(&notelist);
   }
 }
