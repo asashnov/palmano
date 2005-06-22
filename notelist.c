@@ -97,7 +97,13 @@ notelist_draw (NoteListPtr nl)
     }
     if(i == nl->selected)
       buf[0] = '>';
-    WinPaintChars(buf, StrLen(buf), x, y);
+
+    if(1) {
+      RectangleType r = {{x,y}, {nl->rect.extent.x, h}};
+      WinEraseRectangle(&r, 0);
+      WinPaintChars(buf, StrLen(buf), x, y);
+    }
+
     y += h, i++;
   }
   if (notes != NULL)
