@@ -211,6 +211,25 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
   MemPtrUnlock (midiHdrP);
 }
 
+
+/* Generate smf from note list */
+MemHandle smfutils_create(const NoteListPtr srcList)
+{
+  MemHandle smfH;
+  NoteType *notes;
+  Int16 i;
+
+  smfH = smf_StartSMF();
+  debugPrintf("smfutils_save(): smfH started, now is %lx\n", smfH);
+  notes = MemHandleLock(srcList->bufH);
+  for (i = 0; i < srcList->num; i++)
+      smf_AppendNote(smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
+  debugPrintf("Notes added\n");
+  MemHandleUnlock(srcList->bufH);
+  smf_FinishSMF(smfH);
+  return smfH;
+}
+
 int
 smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
 {
@@ -221,18 +240,8 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   SndMidiRecHdrType recHdr;
   MemHandle smfH;
   UInt8*    smfP;
-  NoteType *notes;
-  Int16 i;
 
-  /* generate SMF from NoteList */
-  smfH = smf_StartSMF();
-  debugPrintf("smfutils_save(): smfH started, now is %lx\n", smfH);
-  notes = MemHandleLock(srcList->bufH);
-  for (i = 0; i < srcList->num; i++)
-      smf_AppendNote(smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
-  debugPrintf("Notes added\n");
-  MemHandleUnlock(srcList->bufH);
-  smf_FinishSMF(smfH);
+  smfH = smfutils_create(srcList);
 
   debugPrintf("smfutils_save(): note list written to handle, now handle is %lx\n", smfH);
 
@@ -264,16 +273,34 @@ smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
   return err;
 }
 
+int smfutils_playHandle(MemHandle smfH)
+{
+  SndMidiRecHdrType *midiHdrP;
+  UInt8 *midiStreamP;
+  SndSmfOptionsType smfOpt;
+  Err ret;
+
+  midiHdrP = MemHandleLock (smfH);
+  midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
+  smfOpt.dwStartMilliSec = 0;
+  smfOpt.dwEndMilliSec = sndSmfPlayAllMilliSec;
+  smfOpt.amplitude = (UInt16) PrefGetPreference (prefGameSoundVolume);
+  smfOpt.interruptible = true; /* The sound can be interrupted by a key/digitizer event */
+  smfOpt.reserved = 0;
+  ret = SndPlaySmf (NULL, sndSmfCmdPlay, midiStreamP, &smfOpt, NULL, NULL, false);
+  MemPtrUnlock (midiHdrP);
+
+  return ret;
+}
+
 int
 smfutils_play(SndMidiListItemType *midi)
 {
   Err err = false;
   MemHandle midiH;
-  SndMidiRecHdrType *midiHdrP;
-  UInt8 *midiStreamP;
   DmOpenRef dbP = NULL;
   UInt16 recIndex;
-  SndSmfOptionsType smfOpt;
+
 
   dbP = DmOpenDatabase (midi->cardNo, midi->dbID, dmModeReadOnly);
   if (!dbP)
@@ -284,15 +311,7 @@ smfutils_play(SndMidiListItemType *midi)
 
   if (!err) {
     midiH = DmQueryRecord (dbP, recIndex);
-    midiHdrP = MemHandleLock (midiH);
-    midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
-    smfOpt.dwStartMilliSec = 0;
-    smfOpt.dwEndMilliSec = sndSmfPlayAllMilliSec;
-    smfOpt.amplitude = (UInt16) PrefGetPreference (prefGameSoundVolume);
-    smfOpt.interruptible = true; /* The sound can be interrupted by a key/digitizer event */
-    smfOpt.reserved = 0;
-    err = SndPlaySmf (NULL, sndSmfCmdPlay, midiStreamP, &smfOpt, NULL, NULL, false);
-    MemPtrUnlock (midiHdrP);
+    err = smfutils_playHandle(midiH);
   }
 
   if (dbP)
