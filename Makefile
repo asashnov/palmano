@@ -18,14 +18,14 @@ bin.stamp: palmano.rcp resource.h
 	touch bin.stamp
 
 palmano: palmano.o mkeys.o main_form.o editor_form.o option_form.o utils.o smfutils.o notelist.o
-palmano.o: palmano.c resource.h
-main_form.o: main_form.c main_form.h
-editor_form.o: editor_form.c editor_form.h
-option_form.o: option_form.c option_form.h
-mkeys.o: mkeys.c mkeys.h
-notelist.o: notelist.h notelist.c
-utils.o: utils.c utils.h
-smfutils.o: smfutils.c smfutils.h
+palmano.o:     *.h palmano.c
+main_form.o:   *.h main_form.c
+editor_form.o: *.h editor_form.c
+option_form.o: *.h option_form.c
+mkeys.o:       *.h mkeys.c
+notelist.o:    *.h notelist.c
+utils.o:       *.h utils.c
+smfutils.o:    *.h smfutils.c
 
 clean:
 	-rm -f *.o palmano *.bin *.stamp *.[pg]rc *~
