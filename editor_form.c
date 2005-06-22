@@ -227,6 +227,15 @@ NoteButtonPressed (Int16 note)
 }
 
 static void
+ScrollbarEvent(struct sclRepeat *data)
+{
+  if(data->scrollBarID == ID_EditorNoteScrollBar) {
+    notelist.firstDisplaying = data->newValue;
+    notelist_draw(&notelist);
+  }
+}
+
+static void
 FormClose (void)
 {
   notelist_free(&notelist);
@@ -265,6 +274,10 @@ Boolean EditorFormEventHandler (EventType * e)
 	  return true;
 	}
       break;
+
+    case sclRepeatEvent:
+      ScrollbarEvent((struct sclRepeat *)&e->data);
+      return false;
 
     case MKeysNoteTappedEvent:
       NoteButtonPressed(e->data.generic.datum[0]);
