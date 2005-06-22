@@ -44,8 +44,9 @@ BEGIN
 /*   PUSHBUTTON "[]" ID ID_EditorStop  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 /*   PUSHBUTTON ">>" ID ID_EditorEnd   AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 
-  BUTTON "Save" ID ID_EditorSaveButton AT (124 70 AUTO AUTO) USABLE
-  BUTTON "Drop" ID ID_EditorDropButton AT (124 88 AUTO AUTO) USABLE
+  BUTTON "Save" ID ID_EditorSaveButton AT (124 70         AUTO AUTO) USABLE
+  BUTTON "Drop" ID ID_EditorDropButton AT (124 PrevTop+16 AUTO AUTO) USABLE
+  BUTTON "Play" ID ID_EditorPlayButton AT (124 PrevTop+16 AUTO AUTO) USABLE
 
   GADGET ID ID_EditorMidiKeysGadget AT (2 125 158 34) USABLE
 

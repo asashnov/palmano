@@ -17,18 +17,21 @@
 #define ID_EditorForm              2000
 #define ID_EditorNameField         2001
 #define ID_EditorNoteList          2002
-#define ID_EditorDropButton        2003
-#define ID_EditorSaveButton        2004
-#define ID_EditorDurationPopup     2005
-#define ID_EditorDurationList      2006
-#define ID_EditorMidiKeysGadget    2007
-#define ID_EditorNoteListGadget    2008
-#define ID_EditorNoteScrollBar     2009
 
-#define ID_EditorBegin             2120
-#define ID_EditorPlay              2121
-#define ID_EditorStop              2122
-#define ID_EditorEnd               2123
+#define ID_EditorDropButton        2021
+#define ID_EditorSaveButton        2022
+#define ID_EditorPlayButton        2023
+
+#define ID_EditorDurationPopup     2045
+#define ID_EditorDurationList      2046
+#define ID_EditorMidiKeysGadget    2047
+#define ID_EditorNoteListGadget    2048
+#define ID_EditorNoteScrollBar     2049
+
+#define ID_EditorBegin             2060
+#define ID_EditorPlay              2061
+#define ID_EditorStop              2062
+#define ID_EditorEnd               2063
 
 
 /* other resource */
