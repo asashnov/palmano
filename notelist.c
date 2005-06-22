@@ -66,24 +66,10 @@ notelist_draw (NoteListPtr nl)
   int i;
   int x = nl->rect.topLeft.x;
   int y = nl->rect.topLeft.y;
-  int max_y = nl->rect.topLeft.y + nl->rect.extent.y - h;
+  int max_y = nl->rect.topLeft.y + nl->rect.extent.y - 1;
 
   if (nl->num > 0)
     notes = (NoteType*) MemHandleLock(nl->bufH);
-
-  /* draw must carry for visibiliti of selected note */
-  /*
-  if (nl->selected != -1) {
-    if (nl->selected < nl->firstDisplaying)
-      nl->firstDisplaying = nl->selected;
-    else {
-      Int16 total_displaying = nl->rect.extent.y / h;
-      Int16 last_displaying = nl->firstDisplaying + total_displaying - 1;
-      if (nl->selected > last_displaying)
-	nl->firstDisplaying = nl->selected - total_displaying + 1;
-   }
-  }
-  */
 
   i = nl->firstDisplaying;
   while (y < max_y) {
