@@ -215,6 +215,18 @@ SaveButtonClick (void)
   FrmGotoForm(ID_MainForm);
 }
 
+
+static void
+PlayButtonClick (void)
+{
+  MemHandle smfH;
+
+  smfH = smfutils_create(&notelist);
+  smfutils_playHandle(smfH);
+  MemHandleFree(smfH);
+}
+
+
 static void 
 NoteButtonPressed (Int16 note)
 {
@@ -272,16 +284,11 @@ Boolean EditorFormEventHandler (EventType * e)
       return FormPenDownEvent(e);
 
     case ctlSelectEvent:
-      switch (e->data.ctlSelect.controlID)
-	{
-	case ID_EditorDropButton:
-	  DropButtonClick ();
-	  return true;
-
-	case ID_EditorSaveButton:
-	  SaveButtonClick ();
-	  return true;
-	}
+      switch (e->data.ctlSelect.controlID) {
+      case ID_EditorDropButton: DropButtonClick (); return true;
+      case ID_EditorSaveButton: SaveButtonClick (); return true;
+      case ID_EditorPlayButton: PlayButtonClick (); return true;
+      }
       break;
 
     case sclRepeatEvent:
