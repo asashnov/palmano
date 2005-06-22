@@ -13,6 +13,7 @@ typedef struct NoteList
 {
   Int16     num;
   MemHandle bufH;
+  Uint16    tempo;  		/* song tempo */
 
   RectangleType rect;
   Int16     firstDisplaying;
@@ -29,4 +30,5 @@ extern int  notelist_updateSelected(NoteListPtr nl, const NotePtr note);
 extern void notelist_draw(NoteListPtr nl);
 extern void notelist_tapped(NoteListPtr nl, Int16 tap_x, Int16 tap_y);
 extern void notelist_free(NoteListPtr nl);
+
 #endif
