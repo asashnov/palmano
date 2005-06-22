@@ -72,6 +72,7 @@ notelist_draw (NoteListPtr nl)
     notes = (NoteType*) MemHandleLock(nl->bufH);
 
   /* draw must carry for visibiliti of selected note */
+  /*
   if (nl->selected != -1) {
     if (nl->selected < nl->firstDisplaying)
       nl->firstDisplaying = nl->selected;
@@ -82,26 +83,27 @@ notelist_draw (NoteListPtr nl)
 	nl->firstDisplaying = nl->selected - total_displaying + 1;
    }
   }
+  */
 
   i = nl->firstDisplaying;
   while (y < max_y) {
     if (i >= nl->num) {
       StrPrintF (buf, "                ");
     } else if (notes[i].note < 0) {
-      StrPrintF (buf, " --- %3d %3d %3d", notes[i].dur, notes[i].vel, notes[i].pause);
+      StrPrintF (buf, "--- %3d %3d %3d", notes[i].dur, notes[i].vel, notes[i].pause);
     } else {
-      StrPrintF (buf, " %s%d %3d %3d %3d",
+      StrPrintF (buf, "%s%d %3d %3d %3d",
 		 names[notes[i].note % 12], /* note number in octave */
 		 notes[i].note / 12, /* octave */
 		 notes[i].dur, notes[i].vel, notes[i].pause);
     }
-    if(i == nl->selected)
-      buf[0] = '>';
 
     if(1) {
       RectangleType r = {{x,y}, {nl->rect.extent.x, h}};
       WinEraseRectangle(&r, 0);
       WinPaintChars(buf, StrLen(buf), x, y);
+      if(i == nl->selected)
+	WinInvertRectangle(&r, 0);
     }
 
     y += h, i++;
