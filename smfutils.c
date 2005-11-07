@@ -234,7 +234,7 @@ MemHandle smfutils_create(const NoteListPtr srcList)
   Int16 i;
 
   smfH = smf_StartSMF(srcList);
-  debugPrintf("smfutils_save(): smfH started, now is %lx\n", smfH);
+  debugPrintf("smfutils_create(): smfH started, now is %lx\n", smfH);
   notes = MemHandleLock(srcList->bufH);
   for (i = 0; i < srcList->num; i++)
       smf_AppendNote(smfH, notes[i].note, notes[i].dur, notes[i].vel, notes[i].pause);
@@ -245,45 +245,48 @@ MemHandle smfutils_create(const NoteListPtr srcList)
 }
 
 int
-smfutils_save(MemHandle recH, const Char *midiname, const NoteListPtr srcList)
+smfutils_save(MemHandle saveToH, const Char *midiname, const NoteListPtr srcList)
 {
   Err err;
-  UInt8 *recP;
   UInt8  MidiOffset;
   UInt32 SmfSize;
   SndMidiRecHdrType recHdr;
   MemHandle smfH;
-  UInt8*    smfP;
+  UInt8 *saveToP;
 
+  // get standard MIDI record from note list
   smfH = smfutils_create(srcList);
 
-  debugPrintf("smfutils_save(): note list written to handle, now handle is %lx\n", smfH);
+  debugPrintf("smfutils_save(): smf handle=%lx\n", smfH);
 
   /* save SMF */
   MidiOffset = sizeof(SndMidiRecHdrType) + StrLen(midiname) + 1;
-  SmfSize = MemHandleSize(recH); /* size of all MIDI section (without PalmOS header) */
+  SmfSize = MemHandleSize(smfH); /* size of all MIDI section (without PalmOS header) */
   recHdr.signature = sndMidiRecSignature;
   recHdr.reserved = 0;
   recHdr.bDataOffset = MidiOffset;
 
   /* resize record in DB for insert PalmOS header */
-  if (MemHandleResize(recH, MidiOffset + SmfSize))
+  if (MemHandleResize(saveToH, MidiOffset + SmfSize))
     ErrFatalDisplay("Can't resize handle");
 
   /* Lock down the source SMF and target record and copy the data */
-  recP = MemHandleLock(recH);
-  smfP = MemHandleLock(smfH);
+  saveToP = MemHandleLock(saveToH);
 
-  err = DmWrite(recP, 0, &recHdr, sizeof(recHdr));
-  if (!err) err = DmStrCopy(recP, prvFieldOffset(SndMidiRecType, name), midiname);
-  if (!err) err = DmWrite(recP, MidiOffset, smfP, SmfSize);
+  err = DmWrite(saveToP, 0, &recHdr, sizeof(recHdr));
+  if (!err) err = DmStrCopy(saveToP, prvFieldOffset(SndMidiRecType, name), midiname);
+  if (!err) {
+    UInt8 *smfP = MemHandleLock(smfH);
+    err = DmWrite(saveToP, MidiOffset, smfP, SmfSize);
+    MemHandleUnlock(smfH);    
+  }
 
   if(err) {
     ErrAlert(err);
   }
 
-  MemHandleUnlock(smfH);
-  MemHandleUnlock(recH);
+
+  MemHandleUnlock(saveToH);
   return err;
 }
 
