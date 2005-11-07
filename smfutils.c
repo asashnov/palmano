@@ -21,22 +21,8 @@ const UInt8 MidiHeader[] = {
 };
 const UInt32 MidiHeaderLength = 24;
 
-
-/* TODO: make menu item "add to system sounds".
-
-   All SMF records in the System MIDI Sounds database are available to
-   the user. Developers can add their own alarm SMFs to this database
-   as a way to add variety and personalization to their devices. You
-   can use the sysFileTMidi file type and sysFileCSystem creator to
-   open this database.
-
-   I.e. open datadase as upper and add new record- current song.
-DmOpenDatabaseByTypeCreator
-*/
-
-
 static MemHandle
-smf_StartSMF (const NoteListType *nl)
+smf_StartSMF (const NoteListPtr nl)
 {
   MemHandle retH;
 

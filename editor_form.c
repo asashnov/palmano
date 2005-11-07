@@ -6,6 +6,20 @@
 #include "utils.h"
 #include "smfutils.h"
 
+/* TODO: make menu item "add to system sounds".
+
+   All SMF records in the System MIDI Sounds database are available to
+   the user. Developers can add their own alarm SMFs to this database
+   as a way to add variety and personalization to their devices. You
+   can use the sysFileTMidi file type and sysFileCSystem creator to
+   open this database.
+
+   I.e. open datadase as upper and add new record- current song.
+DmOpenDatabaseByTypeCreator
+Example: file:///mnt/win_e/alex/PalmDev/devdoc/SystemFeatures.html#925370
+*/
+
+
 SndMidiListItemType EditorMidi;	/* current song */
 
 static NoteListType notelist;
@@ -198,6 +212,8 @@ SaveButtonClick (void)
   MemHandle recH;
 
   if (EditorMidi.dbID == 0) {
+    /* create new record in palmano DB */
+
     Err err;
 
     err = getPalmanoDatabase(&openRef, dmModeReadWrite | dmModeExclusive);
@@ -215,18 +231,26 @@ SaveButtonClick (void)
       ErrFatalDisplay("SaveButtonClick(): Can't create new record in palmano DB");
     } else
       debugPrintf("SaveButtonClick(): new record with index %u is created\n", recIndex);
-    //    recH = DmGetRecord(openRef, recIndex);
-    // debugPrintf("SaveButtonClick(): new record handle by DmGetRecord is %lx\n", recH);
-  } else {
+
+    recH = DmGetRecord(openRef, recIndex);
+    ErrFatalDisplayIf(!recH, "SaveButtonClick(): can't get new record by index!");
+  }
+  else {
     /* replace old song in-place */
-    openRef = DmOpenDatabase (EditorMidi.cardNo, EditorMidi.dbID, dmModeReadWrite | dmModeExclusive);
-    ErrFatalDisplayIf(!openRef, "SaveButtonClick(): Can't open old song database for record");
+
+    openRef = DmOpenDatabase (EditorMidi.cardNo, EditorMidi.dbID,
+			      dmModeReadWrite | dmModeExclusive);
+    ErrFatalDisplayIf(!openRef, "SaveButtonClick(): "
+		      "Can't open old song database for record");
     recIndex = EditorMidi.uniqueRecID;
     recH = DmGetRecord(openRef, recIndex);
     ErrFatalDisplayIf(!recH, "SaveButtonClick(): Can't get old song record for writing");
   }
 
-  debugPrintf("SaveButtonClick(): call smfutils_save for save notelist to handle %lx\n", recH);
+  // save midi to recH
+  debugPrintf("SaveButtonClick(): call smfutils_save for save notelist to handle %lx\n",
+	      recH);
+
   GetFieldTextToStr(EditorMidi.name, ID_EditorNameField, sndMidiNameLength);
   smfutils_save(recH, EditorMidi.name, &notelist);
   debugPrintf("SaveButtonClick(): return from smfutils_save()\n");
