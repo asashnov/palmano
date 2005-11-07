@@ -21,6 +21,20 @@ const UInt8 MidiHeader[] = {
 };
 const UInt32 MidiHeaderLength = 24;
 
+
+/* TODO: make menu item "add to system sounds".
+
+   All SMF records in the System MIDI Sounds database are available to
+   the user. Developers can add their own alarm SMFs to this database
+   as a way to add variety and personalization to their devices. You
+   can use the sysFileTMidi file type and sysFileCSystem creator to
+   open this database.
+
+   I.e. open datadase as upper and add new record- current song.
+DmOpenDatabaseByTypeCreator
+*/
+
+
 static MemHandle
 smf_StartSMF (const NoteListType *nl)
 {
@@ -30,8 +44,10 @@ smf_StartSMF (const NoteListType *nl)
 	
   if (retH) {
     UInt8 *buf = MemHandleLock(retH);
-    MemMove(buf, (void *) MidiHeader, MidiHeaderLength);
-    *((UInt16*)&MidiHeader[12]) = nl->tempo;
+    // copy standard MIDI header from read-only location
+    MemMove(buf, MidiHeader, MidiHeaderLength);
+    // set tempo
+    *((UInt16*)(buf+12)) = nl->tempo;
     MemHandleUnlock(retH);
   } else
     ErrDisplay ("Can't alloc midi header");
@@ -189,6 +205,9 @@ smf_ReadNote (MemPtr smf_stream, NoteType * n)
     n->pause = 0;
   n->pause += *p++;
 
+  debugPrintf("smf_ReadNote: note %x vel=%d dur=%d pause=%d\n",
+	      n->note, n->vel, n->dur, n->pause);
+
   return p;
 }
 
@@ -199,11 +218,16 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
   UInt8 *midiStreamP;
   MemPtr p;
   NoteType note;
+  UInt8 midihead[24];
 
+  // get Palm MIDI record header (for skip name of track)
   midiHdrP = MemHandleLock (midiH);
   midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
 
-  dstList->tempo = *((UInt16*)midiStreamP+12);
+  // copy standard MIDI header
+  MemMove(&midihead, midiStreamP, MidiHeaderLength);
+
+  dstList->tempo = *((UInt16*)midihead+12);
 
   if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
     notelist_clear(dstList);
