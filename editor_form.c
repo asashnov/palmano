@@ -27,7 +27,8 @@ SeekScrollBar(scl_seek_t to)
   notelist.firstDisplaying = (to == SCL_BEGIN)? 0 : scroll_max;
 
   SclSetScrollBar (GetObjectFromActiveForm(ID_EditorNoteScrollBar),
-		   notelist.firstDisplaying /*pos*/, 0 /*min*/, scroll_max, pageSize);
+		   notelist.firstDisplaying /*pos*/, 0 /*min*/,
+		   scroll_max, pageSize);
 }
 
 static void 
@@ -47,6 +48,9 @@ LoadSMF(SndMidiListItemType midi, NoteListPtr list)
   UInt16 recIndex;
   MemHandle midiH;
 
+  debugPrintf("LoadSMF: open db cardNo=%d dbID=%d for readOnly\n",
+	      midi.cardNo, midi.dbID);
+
   dbP = DmOpenDatabase (midi.cardNo, midi.dbID, dmModeReadOnly);
   if (!dbP)
     err = true;
@@ -54,10 +58,20 @@ LoadSMF(SndMidiListItemType midi, NoteListPtr list)
   if (!err)
     err = DmFindRecordByID(dbP, midi.uniqueRecID, &recIndex);
 
+  debugPrintf("LoadSMF: find record with uniqueRecID=%ld\n",
+	      midi.uniqueRecID);
+
   if (!err) {
-    midiH = DmQueryRecord (dbP, recIndex); 
-    smfutils_load(midiH, list);
+    midiH = DmQueryRecord (dbP, recIndex);
+    if (!midiH)
+      err = true;
   }
+
+  debugPrintf("LoadSMF: midiH=%lx size=%ld\n",
+	      midiH, MemHandleSize(midiH));
+
+  if (!err)
+    smfutils_load(midiH, list);
 
   if (dbP)
     DmCloseDatabase (dbP);
@@ -70,8 +84,11 @@ LoadSMF(SndMidiListItemType midi, NoteListPtr list)
 static void
 FormOpen (void)
 {
-  FormGadgetType *notelistGadget = GetObjectFromActiveForm (ID_EditorNoteListGadget);
-  FormGadgetType *midekeysGadget = GetObjectFromActiveForm (ID_EditorMidiKeysGadget);
+  FormGadgetType *notelistGadget
+    = GetObjectFromActiveForm (ID_EditorNoteListGadget);
+
+  FormGadgetType *midekeysGadget
+    = GetObjectFromActiveForm (ID_EditorMidiKeysGadget);
 
   notelist_init(&notelist, notelistGadget);
   midikeys_init(&midikeys, midekeysGadget);
@@ -137,19 +154,24 @@ static Err getPalmanoDatabase (DmOpenRef *dbPP, UInt16 mode)
   
   // Find the application's data file.  If it doesn't exist create it.
   dbP = DmOpenDatabaseByTypeCreator (sysFileTMidi, pmnoCreatorDB, mode);
+
   if (!dbP) {
-    debugPrintf("getPalmanoDatabase(): Can't open database, code %d\n", DmGetLastErr());
+    debugPrintf("getPalmanoDatabase(): Can't open database, code %d\n",
+		DmGetLastErr());
     error = DmCreateDatabase (0, "palmano", pmnoCreatorDB, sysFileTMidi, false);
+
     if (error) {
       debugPrintf("getPalmanoDatabase(): DmCreateDatabase exit code %d\n", error);
       ErrAlert(error);
       return error;
-    } else
+    }
+    else
       debugPrintf("getPalmanoDatabase(): create DB ok\n");
 
     dbP = DmOpenDatabaseByTypeCreator(sysFileTMidi, pmnoCreatorDB, mode);
     if (!dbP) {
-      debugPrintf("getPalmanoDatabase(): Can't open database after create, code %d\n", DmGetLastErr());
+      debugPrintf("getPalmanoDatabase(): Can't open database after create, code %d\n",
+		  DmGetLastErr());
       ErrAlert(DmGetLastErr());      
       return DmGetLastErr();
     } else
