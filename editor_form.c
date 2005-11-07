@@ -225,14 +225,6 @@ SaveButtonClick (void)
     /* allocate new record in DB */
     recIndex = dmMaxRecordIndex;
     recH = DmNewRecord(openRef, &recIndex, 5); /* initial size is 5 bytes */
-    if (recH == 0) {
-      Err err = DmGetLastErr();
-      ErrAlert(err);
-      ErrFatalDisplay("SaveButtonClick(): Can't create new record in palmano DB");
-    } else
-      debugPrintf("SaveButtonClick(): new record with index %u is created\n", recIndex);
-
-    recH = DmGetRecord(openRef, recIndex);
     ErrFatalDisplayIf(!recH, "SaveButtonClick(): can't get new record by index!");
   }
   else {
@@ -248,10 +240,10 @@ SaveButtonClick (void)
   }
 
   // save midi to recH
-  debugPrintf("SaveButtonClick(): call smfutils_save for save notelist to handle %lx\n",
-	      recH);
-
   GetFieldTextToStr(EditorMidi.name, ID_EditorNameField, sndMidiNameLength);
+
+  debugPrintf("SaveButtonClick(): smfutils_save(recH=%lx, name=%s\n",
+	      recH, EditorMidi.name);
   smfutils_save(recH, EditorMidi.name, &notelist);
   debugPrintf("SaveButtonClick(): return from smfutils_save()\n");
 
