@@ -1,5 +1,6 @@
 CC = m68k-palmos-gcc
 CFLAGS = -g -DDEBUG -O0 -Wall
+LDFLAGS = -g
 
 SOURCES = *.c palmano.rcp
 HEADERS = *.h
