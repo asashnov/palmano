@@ -23,6 +23,16 @@ void debugPrintf(char *fmt, ...)
 }
 #endif
 
+/*
+Formats samples:
+
+  %lx  - MemHandles
+
+
+*/
+
+
+
 void *
 GetObjectFromActiveForm (UInt16 id)
 {
