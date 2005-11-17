@@ -102,14 +102,18 @@ smf_FinishSMF (MemHandle bufH)
 {
   UInt8 *buf;
   UInt32 bufsize, neededSize;
-  int pos;
+  UInt32 pos;
 
   if (!bufH) return 0; // make error-handling easy for our caller
 
   // how big is our buffer?
   bufsize = MemHandleSize(bufH);
+
   buf = MemHandleLock(bufH);
-  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2; // position of next spot to put data
+
+  // position of next spot to put data
+  pos = (*((UInt32 *)(&buf[18]))) + MidiHeaderLength -2;
+
   MemHandleUnlock(bufH);
 	
   // allocate more memory if necessary
@@ -282,15 +286,15 @@ smfutils_save(MemHandle saveToH, const Char *midiname, const NoteListPtr srcList
   if (!err) {
     UInt8 *smfP = MemHandleLock(smfH);
     err = DmWrite(saveToP, MidiOffset, smfP, SmfSize);
-    MemHandleUnlock(smfH);    
+    MemHandleUnlock(smfH);
   }
 
   if(err) {
     ErrAlert(err);
   }
 
-
   MemHandleUnlock(saveToH);
+  MemHandleFree(smfH);
   return err;
 }
 
