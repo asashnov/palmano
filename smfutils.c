@@ -25,18 +25,24 @@ static MemHandle
 smf_StartSMF (const NoteListPtr nl)
 {
   MemHandle retH;
+  UInt8 *buf;
 
   retH = MemHandleNew(MidiHeaderLength);
 	
-  if (retH) {
-    UInt8 *buf = MemHandleLock(retH);
-    // copy standard MIDI header from read-only location
-    MemMove(buf, MidiHeader, MidiHeaderLength);
-    // set tempo
-    *((UInt16*)(buf+12)) = nl->tempo;
-    MemHandleUnlock(retH);
-  } else
+  if (!retH) {
     ErrDisplay ("Can't alloc midi header");
+    return NULL;
+  }
+
+  buf = MemHandleLock(retH);
+
+  // copy standard MIDI header from read-only location
+  MemMove(buf, MidiHeader, MidiHeaderLength);
+
+  // set tempo
+  MemMove(buf+12, &nl->tempo, 2);
+
+  MemHandleUnlock(retH);
 
   return retH;
 }
@@ -204,16 +210,13 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
   UInt8 *midiStreamP;
   MemPtr p;
   NoteType note;
-  UInt8 midihead[24];
 
   // get Palm MIDI record header (for skip name of track)
   midiHdrP = MemHandleLock (midiH);
+
   midiStreamP = (UInt8 *) midiHdrP + midiHdrP->bDataOffset;
 
-  // copy standard MIDI header
-  MemMove(&midihead, midiStreamP, MidiHeaderLength);
-
-  dstList->tempo = *((UInt16*)midihead+12);
+  MemMove(&dstList->tempo, midiStreamP+12, 2);
 
   if ((p = smf_GetBeginNoteData(midiStreamP)) != NULL) {
     notelist_clear(dstList);
@@ -222,6 +225,7 @@ smfutils_load(MemHandle midiH, NoteListPtr dstList)
       notelist_append(dstList, &note);
     }
   }
+
   MemPtrUnlock (midiHdrP);
 }
 
