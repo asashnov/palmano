@@ -205,6 +205,17 @@ MainFormEventHandler (EventType * e)
       //      k = (_KeyDownEventType *) data;
       //      switch (k->KeyCode)
       // do list scrolling
+
+    case menuEvent:
+      switch (e->data.menu.itemID) {
+      case ID_MainMenuHelpAbout:
+	FrmAlert (ID_AboutAlert);
+	break;
+      }
+
+
+    default:			/* for avoid warnings */
+      break;
     }
 
   return false;			/* FrmDispatchEvent now must call FrmHandleEvent*/

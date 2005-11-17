@@ -37,4 +37,4 @@
 /* other resource */
 #define ID_NotImplAlert            9980
 #define ID_MidiNotSelAlert         9981
-
+#define ID_AboutAlert              9982

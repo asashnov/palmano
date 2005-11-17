@@ -6,6 +6,7 @@ VERSION "0.5"
 
 
 /*------ Main form and menu ------*/
+
 FORM ID ID_MainForm AT(0 0 160 160)
 MENUID ID_MainMenu
 BEGIN
@@ -13,7 +14,9 @@ BEGIN
   LIST "" ID ID_MainSongList AT (0 18 160 122) USABLE
 
   POPUPTRIGGER "Open" ID ID_MainPopupTrigger AT (2 146 60 AUTO) USABLE LEFTANCHOR
+
   LIST "Edit" "Play" "Copy" "Delete" "Info" "Beam" ID ID_MainActionList AT (PrevLeft PrevTop 52 1) NONUSABLE VISIBLEITEMS 6
+
   POPUPLIST ID ID_MainPopupTrigger ID_MainActionList
 
   BUTTON "New" ID ID_MainNewButton AT (65 145 AUTO AUTO) USABLE
@@ -31,6 +34,7 @@ END
 
 
 /*------ Editor form ------*/
+
 FORM ID ID_EditorForm AT (0 0 160 160)
 BEGIN
   /* TITLE "Editor" */
@@ -45,8 +49,8 @@ BEGIN
 /*   PUSHBUTTON ">>" ID ID_EditorEnd   AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 
   BUTTON "Save" ID ID_EditorSaveButton AT (124 70         AUTO AUTO) USABLE
-  BUTTON "Drop" ID ID_EditorDropButton AT (124 PrevTop+16 AUTO AUTO) USABLE
   BUTTON "Play" ID ID_EditorPlayButton AT (124 PrevTop+16 AUTO AUTO) USABLE
+  BUTTON "Cancel" ID ID_EditorDropButton AT (124 PrevTop+16 AUTO AUTO) USABLE
 
   GADGET ID ID_EditorMidiKeysGadget AT (2 125 158 34) USABLE
 
@@ -56,6 +60,14 @@ END
 
 
 /* Alerts */
+
+ALERT ID_AboutAlert
+  INFORMATION
+BEGIN
+  TITLE "About"
+  MESSAGE "Palmano. Author Alexander Sashnov <sashnov@ngs.ru>."
+  BUTTONS "OK"
+END
 
 ALERT ID ID_NotImplAlert
   INFORMATION
