@@ -210,12 +210,13 @@ SaveButtonClick (void)
   DmOpenRef openRef;
   UInt16 recIndex;
   MemHandle recH;
+  Err err;
 
   if (EditorMidi.dbID == 0) {
+
+    debugPrintf("dbID==0, create a new record in Palmano DB\n");
     /* create new record in palmano DB */
-
-    Err err;
-
+ 
     err = getPalmanoDatabase(&openRef, dmModeReadWrite | dmModeExclusive);
     if (err != 0) {
       ErrAlert(err);
@@ -232,11 +233,18 @@ SaveButtonClick (void)
 
     openRef = DmOpenDatabase (EditorMidi.cardNo, EditorMidi.dbID,
 			      dmModeReadWrite | dmModeExclusive);
+
     ErrFatalDisplayIf(!openRef, "SaveButtonClick(): "
 		      "Can't open old song database for record");
-    recIndex = EditorMidi.uniqueRecID;
+
+    err = DmFindRecordByID(openRef, EditorMidi.uniqueRecID, &recIndex);
+
+    ErrFatalDisplayIf(err, "Can't find record by ID");
+
     recH = DmGetRecord(openRef, recIndex);
-    ErrFatalDisplayIf(!recH, "SaveButtonClick(): Can't get old song record for writing");
+
+    ErrFatalDisplayIf(!recH, "SaveButtonClick(): "
+		      "Can't get old song record for writing");
   }
 
   // save midi to recH
