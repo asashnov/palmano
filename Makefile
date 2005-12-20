@@ -5,7 +5,7 @@ LDFLAGS = -g
 SOURCES = *.c palmano.rcp
 HEADERS = *.h
 DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile NEWS TODO
-EXTRA_DIST = doc
+EXTRA_DIST =
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
@@ -36,6 +36,7 @@ install:
 
 dist:
 	rm -f palmano*.tgz
+	cvs2cl
 	tar -czf palmano-`date '+%Y%m%d'`.tgz --exclude *~  $(DISTFILES)
 
 tags:
