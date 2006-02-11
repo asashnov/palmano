@@ -94,6 +94,17 @@ SetFieldTextFromStr (UInt16 fieldID, Char * strP)
   return SetFieldTextFromHandle (fieldID, txtH);
 }
 
+// set field text from number
+FieldPtr
+SetFieldTextFromNumber(UInt16 fieldID, Int16 num)
+{
+  Char str[12];
+
+  StrPrintF(str, "%d", num);
+
+  return SetFieldTextFromStr(fieldID, str);
+}
+
 void GetFieldTextToStr (char *to, const UInt16 fieldId, int max)
 {
   FieldPtr fldP = GetObjectFromActiveForm(fieldId);
