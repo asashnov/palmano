@@ -55,9 +55,9 @@ BEGIN
   LABEL "Velocity:" AUTOID AT (PrevLeft PrevBottom)
   LABEL "Pause:"    AUTOID AT (PrevLeft PrevBottom)
 
-  FIELD ID ID_EditorDuration AT (124 26 24 AUTO)                     EDITABLE NUMERIC UNDERLINED
-  FIELD ID ID_EditorVelocity AT (PrevLeft PrevBottom PrevWidth AUTO) EDITABLE NUMERIC UNDERLINED 
-  FIELD ID ID_EditorPause    AT (PrevLeft PrevBottom PrevWidth AUTO) EDITABLE NUMERIC UNDERLINED
+  FIELD ID ID_EditorDuration AT (124 26 24 AUTO)                     USABLE EDITABLE NUMERIC UNDERLINED SINGLELINE MAXCHARS 5
+  FIELD ID ID_EditorVelocity AT (PrevLeft PrevBottom PrevWidth AUTO) USABLE EDITABLE NUMERIC UNDERLINED SINGLELINE MAXCHARS 5
+  FIELD ID ID_EditorPause    AT (PrevLeft PrevBottom PrevWidth AUTO) USABLE EDITABLE NUMERIC UNDERLINED SINGLELINE MAXCHARS 5
 
 /*   BUTTON "Save" ID ID_EditorSaveButton AT (124 70         AUTO AUTO) USABLE */
 /*   BUTTON "Play" ID ID_EditorPlayButton AT (124 PrevTop+16 AUTO AUTO) USABLE */
@@ -72,6 +72,7 @@ BEGIN
   PULLDOWN "File"
   BEGIN
     MENUITEM "Save" ID ID_EditorMenuFileSave "S"
+    MENUITEM "Export to system sound" ID ID_EditorMenuFileSystem "E"
   END
 END
 

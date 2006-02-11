@@ -39,6 +39,7 @@
 
 #define ID_EditorMenu              2200
 #define ID_EditorMenuFileSave      2201
+#define ID_EditorMenuFileSystem    2202
 
 
 
