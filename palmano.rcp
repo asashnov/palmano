@@ -1,11 +1,11 @@
 #include "resource.h"
 
-VERSION "0.5"
+VERSION "1.0"
 
 
 
 
-/*------ Main form and menu ------*/
+/*------ Main form ------*/
 
 FORM ID ID_MainForm AT(0 0 160 160)
 MENUID ID_MainMenu
@@ -36,26 +36,44 @@ END
 /*------ Editor form ------*/
 
 FORM ID ID_EditorForm AT (0 0 160 160)
+MENUID ID_EditorMenu
 BEGIN
   /* TITLE "Editor" */
   GRAFFITISTATEINDICATOR AT (149 0)
   FIELD ID ID_EditorNameField AT (2 PrevTop 160 AUTO) USABLE LEFTALIGN EDITABLE UNDERLINED SINGLELINE MAXCHARS 31 AUTOSHIFT
   GADGET    ID ID_EditorNoteListGadget AT (0 PrevBottom+2 67 99) USABLE
   SCROLLBAR ID ID_EditorNoteScrollBar  AT (PrevRight+1 PrevTop 7 PrevHeight) VALUE 0 MIN 0
+
   /* Control buttons */
 /*   PUSHBUTTON "<<" ID ID_EditorBegin AT (93 120 AUTO AUTO) */
 /*   PUSHBUTTON ">"  ID ID_EditorPlay  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 /*   PUSHBUTTON "[]" ID ID_EditorStop  AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 /*   PUSHBUTTON ">>" ID ID_EditorEnd   AT (PrevRight+1 PrevTop AUTO PrevHeight) */
 
-  BUTTON "Save" ID ID_EditorSaveButton AT (124 70         AUTO AUTO) USABLE
-  BUTTON "Play" ID ID_EditorPlayButton AT (124 PrevTop+16 AUTO AUTO) USABLE
-  BUTTON "Cancel" ID ID_EditorDropButton AT (124 PrevTop+16 AUTO AUTO) USABLE
+  LABEL "Note:"     AUTOID AT (PrevRight+3 PrevTop)
+  LABEL "Duration:" AUTOID AT (PrevLeft PrevBottom)
+  LABEL "Velocity:" AUTOID AT (PrevLeft PrevBottom)
+  LABEL "Pause:"    AUTOID AT (PrevLeft PrevBottom)
+
+  FIELD ID ID_EditorDuration AT (124 26 24 AUTO)                     EDITABLE NUMERIC UNDERLINED
+  FIELD ID ID_EditorVelocity AT (PrevLeft PrevBottom PrevWidth AUTO) EDITABLE NUMERIC UNDERLINED 
+  FIELD ID ID_EditorPause    AT (PrevLeft PrevBottom PrevWidth AUTO) EDITABLE NUMERIC UNDERLINED
+
+/*   BUTTON "Save" ID ID_EditorSaveButton AT (124 70         AUTO AUTO) USABLE */
+/*   BUTTON "Play" ID ID_EditorPlayButton AT (124 PrevTop+16 AUTO AUTO) USABLE */
+/*   BUTTON "Cancel" ID ID_EditorDropButton AT (124 PrevTop+16 AUTO AUTO) USABLE */
 
   GADGET ID ID_EditorMidiKeysGadget AT (2 125 158 34) USABLE
 
 END
 
+MENU ID ID_EditorMenu
+BEGIN
+  PULLDOWN "File"
+  BEGIN
+    MENUITEM "Save" ID ID_EditorMenuFileSave "S"
+  END
+END
 
 
 

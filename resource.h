@@ -33,6 +33,14 @@
 #define ID_EditorStop              2062
 #define ID_EditorEnd               2063
 
+#define ID_EditorDuration          2100
+#define ID_EditorVelocity          2101
+#define ID_EditorPause             2102
+
+#define ID_EditorMenu              2200
+#define ID_EditorMenuFileSave      2201
+
+
 
 /* other resource */
 #define ID_NotImplAlert            9980
