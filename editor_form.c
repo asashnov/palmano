@@ -155,23 +155,25 @@ FormPenDownEvent(EventType * e)
   FormPtr frm = FrmGetActiveForm ();
   UInt16 objIndex;
   RectangleType r;
+  Boolean res = false;
 
   objIndex = FrmGetObjectIndex (frm, ID_EditorMidiKeysGadget);
   FrmGetObjectBounds (frm, objIndex, &r);
   if (RctPtInRectangle (e->screenX, e->screenY, &r)) {
     midikeys_tapped(&midikeys, e->screenX, e->screenY);
-    return true;
+    res = true;
   }
 
   objIndex = FrmGetObjectIndex (frm, ID_EditorNoteListGadget);
   FrmGetObjectBounds (frm, objIndex, &r);
   if (RctPtInRectangle (e->screenX, e->screenY, &r)) {
     notelist_tapped(&notelist, e->screenX, e->screenY);
-    UpdateNoteProperties();
-    return true;
+    res = true;
   }
 
-  return false;
+  UpdateNoteProperties();
+
+  return res;
 }
 
 static void
@@ -335,6 +337,8 @@ ScrollbarEvent (struct sclRepeat *data)
     notelist.selected = -1;
     notelist_draw(&notelist);
   }
+
+  UpdateNoteProperties();
 }
 
 static void
