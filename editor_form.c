@@ -45,6 +45,37 @@ SeekScrollBar(scl_seek_t to)
 		   scroll_max, pageSize);
 }
 
+
+/* Get current selected note and fill out note properties elements.
+   If selected == -1, clear and disable this fields. */
+static void
+UpdateNoteProperties()
+{
+  FormPtr frm = FrmGetActiveForm ();
+
+  if (notelist.selected == -1) {
+    FrmHideObject(frm, FrmGetObjectIndex(frm, ID_EditorDuration));
+    FrmHideObject(frm, FrmGetObjectIndex(frm, ID_EditorVelocity));
+    FrmHideObject(frm, FrmGetObjectIndex(frm, ID_EditorPause));
+  }
+  else {
+    NotePtr notes = MemHandleLock(notelist.bufH);
+    NotePtr note = notes + notelist.selected;
+
+    ErrFatalDisplayIf(notelist.selected > notelist.num, "Invalid note index!");
+
+    SetFieldTextFromNumber(ID_EditorDuration, note->dur);
+    SetFieldTextFromNumber(ID_EditorVelocity, note->vel);
+    SetFieldTextFromNumber(ID_EditorPause, note->pause);
+
+    FrmShowObject(frm, FrmGetObjectIndex(frm, ID_EditorDuration));
+    FrmShowObject(frm, FrmGetObjectIndex(frm, ID_EditorVelocity));
+    FrmShowObject(frm, FrmGetObjectIndex(frm, ID_EditorPause));
+
+    MemPtrUnlock(notes);
+  }
+}
+
 static void 
 FormUpdate()
 {
@@ -52,6 +83,7 @@ FormUpdate()
   FrmDrawForm (frm);
   midikeys_draw(&midikeys);
   notelist_draw(&notelist);
+  UpdateNoteProperties();
 }
 
 static Int16
@@ -130,12 +162,15 @@ FormPenDownEvent(EventType * e)
     midikeys_tapped(&midikeys, e->screenX, e->screenY);
     return true;
   }
+
   objIndex = FrmGetObjectIndex (frm, ID_EditorNoteListGadget);
   FrmGetObjectBounds (frm, objIndex, &r);
   if (RctPtInRectangle (e->screenX, e->screenY, &r)) {
     notelist_tapped(&notelist, e->screenX, e->screenY);
+    UpdateNoteProperties();
     return true;
   }
+
   return false;
 }
 
@@ -293,7 +328,7 @@ NoteButtonPressed (Int16 note)
 }
 
 static void
-ScrollbarEvent(struct sclRepeat *data)
+ScrollbarEvent (struct sclRepeat *data)
 {
   if(data->scrollBarID == ID_EditorNoteScrollBar) {
     notelist.firstDisplaying = data->newValue;
@@ -310,12 +345,12 @@ FormClose (void)
 
 
 /* Editor Form event handler */
-Boolean EditorFormEventHandler (EventType * e)
+Boolean EditorFormEventHandler(EventType * e)
 {
   switch ((UInt16)e->eType)
     {
     case frmOpenEvent:
-      FormOpen ();
+      FormOpen();
       return true;
 
     case frmUpdateEvent:
@@ -323,17 +358,17 @@ Boolean EditorFormEventHandler (EventType * e)
       return true;
 
     case frmCloseEvent:
-      FormClose ();
-      return false;		/* return unhandled status for call default system handler (witch free form data),
-				   accordin with standard sdk examples */
+      FormClose();
+      return false; /* return unhandled status for call default system handler (witch free form data),
+		       accordin with standard sdk examples */
     case penDownEvent:
       return FormPenDownEvent(e);
 
     case ctlSelectEvent:
       switch (e->data.ctlSelect.controlID) {
-      case ID_EditorDropButton: DropButtonClick (); return true;
-      case ID_EditorSaveButton: SaveButtonClick (); return true;
-      case ID_EditorPlayButton: PlayButtonClick (); return true;
+      case ID_EditorDropButton: DropButtonClick(); return true;
+      case ID_EditorSaveButton: SaveButtonClick(); return true;
+      case ID_EditorPlayButton: PlayButtonClick(); return true;
       }
       break;
 
