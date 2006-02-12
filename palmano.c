@@ -7,6 +7,10 @@
 #include "option_form.h"
 #include "utils.h"
 
+
+/* TODO: use PrefGetAppPreferences and PrefSetAppPreferences
+  for save current view */
+
 void
 StopApplication (void)
 {
@@ -77,7 +81,7 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
 
 	if (rom_version < 0x03000000)
 	  ErrFatalDisplay("Palm OS >= 3.0 required for this programm "
-			  "(custom system sound alert feature is needed).");
+			  "(custom system sound alert feature is required).");
       }
       
       debugPrintf("Start logging\n");
@@ -87,6 +91,8 @@ PilotMain (UInt16 cmd, void *cmdPBP UNUSED, UInt16 launchFlags UNUSED)
       do
 	{
 	  EvtGetEvent (&event, evtWaitForever);
+
+	  // PreprocessEvent (&event);
 
 	  if (!SysHandleEvent (&event))
 
