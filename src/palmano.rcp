@@ -91,7 +91,7 @@ END
 ALERT ID ID_NotImplAlert
   INFORMATION
 BEGIN
-  TITLE "Palmano v0.2"
+  TITLE "Palmano v0.5"
   MESSAGE "This feature is not emplemented yet!"
   BUTTONS "OK"
 END
