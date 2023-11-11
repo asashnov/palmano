@@ -84,7 +84,7 @@ ALERT ID_AboutAlert
   INFORMATION
 BEGIN
   TITLE "About"
-  MESSAGE "Palmano. Author Alexander Sashnov <sashnov@ngs.ru>."
+  MESSAGE "Palmano. Author Alexander Sashnov <asashnov@rambler.ru>."
   BUTTONS "OK"
 END
 
